@@ -1,0 +1,50 @@
+{
+  "cli_version": "0.4.4",
+  "checkpoint_id": "94db4be08fdf",
+  "session_id": "36ab6933-405d-4553-b75b-7c2ab2c08ad8",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-17T08:39:12.961697191Z",
+  "branch": "main",
+  "checkpoints_count": 4,
+  "files_touched": [
+    ".claude/settings.local.json",
+    ".gitignore",
+    "Agent.md",
+    "CLAUDE.md",
+    "pyproject.toml",
+    "src/money_get/__init__.py",
+    "src/money_get/__main__.py",
+    "src/money_get/agent/__init__.py",
+    "src/money_get/agent/graph.py",
+    "src/money_get/agent/nodes.py",
+    "src/money_get/agent/state.py",
+    "src/money_get/agent/tools.py",
+    "src/money_get/config.py",
+    "src/money_get/data/__init__.py",
+    "src/money_get/data/stock.py",
+    "src/money_get/data/storage.py",
+    "src/money_get/data/trade.py",
+    "src/money_get/main.py",
+    "src/money_get/services/__init__.py",
+    "src/money_get/services/analyzer.py",
+    "src/money_get/services/reporter.py"
+  ],
+  "agent": "Claude Code",
+  "token_usage": {
+    "input_tokens": 27270,
+    "cache_creation_tokens": 85535,
+    "cache_read_tokens": 2428012,
+    "output_tokens": 13640,
+    "api_call_count": 74
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-17T08:39:12.820558244Z",
+    "agent_lines": 947,
+    "human_added": 122,
+    "human_modified": 10,
+    "human_removed": 0,
+    "total_committed": 1079,
+    "agent_percentage": 87.76645041705282
+  },
+  "transcript_path": ".claude/projects/-home-lijiang-code-money-get/36ab6933-405d-4553-b75b-7c2ab2c08ad8.jsonl"
+}
