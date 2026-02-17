@@ -1,0 +1,96 @@
+"""自定义回调处理器"""
+import json
+import os
+from pathlib import Path
+from datetime import datetime
+from langchain_core.callbacks import BaseCallbackHandler
+
+
+class VerboseCallbackHandler(BaseCallbackHandler):
+    """打印 prompt 和 response 到终端"""
+    
+    def on_llm_start(self, serialized, prompts, **kwargs):
+        print("\n" + "="*50)
+        print("📤 PROMPT (LLM Input)")
+        print("="*50)
+        for i, p in enumerate(prompts):
+            print(f"\n--- Message {i+1} ---")
+            # 截断太长
+            print(p[:2000] if len(p) > 2000 else p)
+        print()
+    
+    def on_llm_end(self, response, **kwargs):
+        print("="*50)
+        print("📥 RESPONSE (LLM Output)")
+        print("="*50)
+        # 打印内容
+        if hasattr(response, 'generations') and response.generations:
+            for gen in response.generations[0]:
+                content = gen.text if hasattr(gen, 'text') else str(gen)
+                print(content[:2000] if len(content) > 2000 else content)
+        print("\n" + "="*50)
+        
+        # 打印 token 使用
+        if hasattr(response, 'llm_output') and response.llm_output:
+            usage = response.llm_output.get('usage', {})
+            print(f"📊 Token: prompt={usage.get('prompt_tokens', 0)}, "
+                  f"completion={usage.get('completion_tokens', 0)}, "
+                  f"total={usage.get('total_tokens', 0)}")
+            print("="*50 + "\n")
+    
+    def on_llm_error(self, error, **kwargs):
+        print(f"\n❌ LLM Error: {error}\n")
+
+
+class TraceCallbackHandler(BaseCallbackHandler):
+    """记录 prompt 和 response 到日志文件"""
+    
+    def __init__(self):
+        super().__init__()
+        self.trace_file = Path(__file__).parent.parent.parent / "data" / "traces"
+        self.trace_file.mkdir(parents=True, exist_ok=True)
+        self.trace_file = self.trace_file / f"trace_{datetime.now().strftime('%Y%m%d')}.jsonl"
+    
+    def on_llm_start(self, serialized, prompts, **kwargs):
+        entry = {
+            "type": "start",
+            "timestamp": datetime.now().isoformat(),
+            "prompts": prompts
+        }
+        self._write(entry)
+    
+    def on_llm_end(self, response, **kwargs):
+        # 获取输出
+        output_text = ""
+        if hasattr(response, 'generations') and response.generations:
+            for gen in response.generations[0]:
+                output_text = gen.text if hasattr(gen, 'text') else str(gen)
+        
+        # 获取 token
+        usage = {}
+        if hasattr(response, 'llm_output') and response.llm_output:
+            usage = response.llm_output.get('usage', {})
+        
+        entry = {
+            "type": "end",
+            "timestamp": datetime.now().isoformat(),
+            "output": output_text[:5000],  # 限制长度
+            "usage": usage
+        }
+        self._write(entry)
+    
+    def on_llm_error(self, error, **kwargs):
+        entry = {
+            "type": "error",
+            "timestamp": datetime.now().isoformat(),
+            "error": str(error)
+        }
+        self._write(entry)
+    
+    def _write(self, entry):
+        try:
+            with open(self.trace_file, 'a', encoding='utf-8') as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+            print(f"📝 Traced to: {self.trace_file}")
+        except Exception as e:
+            print(f"⚠️ Trace write failed: {e}")
