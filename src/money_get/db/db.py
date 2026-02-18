@@ -55,10 +55,19 @@ def init_db():
         version = mf.stem  # e.g., "001_initial"
         if version not in applied:
             logger.info(f"Applying migration: {version}")
-            sql = mf.read_text(encoding="utf-8")
-            cursor.executescript(sql)
-            conn.commit()
-            logger.info(f"Migration {version} applied")
+            try:
+                sql = mf.read_text(encoding="utf-8")
+                cursor.executescript(sql)
+                cursor.execute(
+                    "INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)",
+                    (version, datetime.now().isoformat()),
+                )
+                conn.commit()
+                logger.info(f"Migration {version} applied")
+            except Exception:
+                conn.rollback()
+                logger.exception(f"Failed to apply migration: {version}")
+                raise
     
     conn.close()
     logger.info(f"Database initialized at: {get_db_path()}")
@@ -261,11 +270,11 @@ def insert_fund_flow(code: str, date: str, data: Dict) -> bool:
         VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
     """, (
         code, date,
-        data.get("主力净流入"),
-        data.get("小单净流入"),
-        data.get("中单净流入"),
-        data.get("大单净流入"),
-        data.get("超大单净流入")
+        data.get("main_net_inflow") or data.get("主力净流入"),
+        data.get("small_net_inflow") or data.get("小单净流入"),
+        data.get("medium_net_inflow") or data.get("中单净流入"),
+        data.get("large_net_inflow") or data.get("大单净流入"),
+        data.get("super_net_inflow") or data.get("超大单净流入")
     ))
     conn.commit()
     conn.close()

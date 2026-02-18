@@ -30,41 +30,19 @@ class DecisionAgent(BaseAgent):
                 **kwargs) -> str:
         """最终决策"""
         
-        # 获取用户的交易原则
-        principles = self._get_principles()
-        
-        # 构建提示词
-        prompt = self._build_prompt(stock_code, fund_analysis, 
-                                    news_analysis, sentiment_analysis,
-                                    research_result, principles)
-        
-        # 调用LLM
-        result = self.call_llm(prompt)
-        
-        return self.format_output(f"⚖️ 决策 - {stock_code}", result)
-    
-    def _get_principles(self) -> str:
-        """获取用户原则"""
-        try:
-            from money_get.memory import get_shared_memory
-            principles = get_shared_memory('principles')
-            patterns = get_shared_memory('patterns')
-            
-            result = "【交易原则】\n"
-            for p in principles:
-                result += f"- {p}\n"
-            
-            result += "\n【交易规律】\n"
-            for p in patterns:
-                result += f"- {p}\n"
-            
-            return result
-        except:
-            return """【默认原则】
+        principles = """【交易原则】
 - 只买行业龙头
 - 不追高，只低吸
 - 阶梯止盈：10%卖20%，15%卖20%，20%卖20%，30%清仓
 - 止损：-5%"""
+        
+        prompt = self._build_prompt(stock_code, fund_analysis, 
+                                    news_analysis, sentiment_analysis,
+                                    research_result, principles)
+        
+        result = self.call_llm(prompt)
+        
+        return self.format_output(f"⚖️ 决策 - {stock_code}", result)
     
     def _build_prompt(self, stock_code: str, fund: str, news: str, 
                       sentiment: str, research: str, principles: str) -> str:

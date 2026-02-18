@@ -1,89 +1,100 @@
-"""多Agent股票分析系统"""
+"""
+money-get 多Agent股票分析系统
+
+架构说明:
+- 5个专业Agent: 资金/新闻/情绪/研究/决策
+- 支持3种协作模式: parallel/sequential/hybrid  
+- 上下文隔离: 每个股票的记忆独立
+- 异动监控: 自动检测重大利好/利空
+"""
 from .base import BaseAgent
+
+# 分析Agent
 from .fund_agent import FundAgent, analyze_fund
 from .news_agent import NewsAgent, analyze_news
 from .sentiment_agent import SentimentAgent, analyze_sentiment
 from .research_agent import ResearchAgent, research
 from .decision_agent import DecisionAgent, decide
+from .alert_agent import MarketAlertAgent, analyze_market_movement, quick_market_check
+
+# 协作与工具
 from .cache import clear_cache
+from .collaboration import (
+    AgentTeam,
+    MultiAgentOrchestrator,
+    parallel_analyze,
+    hybrid_analyze,
+    COLLABORATION_MODES
+)
+from ..context import ContextScope, get_isolated_context, add_stock_summary
 
 
 class TradingAgents:
-    """多Agent交易系统"""
+    """多Agent交易系统 - 核心入口"""
     
-    def __init__(self):
-        self.fund_agent = FundAgent()
-        self.news_agent = NewsAgent()
-        self.sentiment_agent = SentimentAgent()
-        self.research_agent = ResearchAgent()
-        self.decision_agent = DecisionAgent()
-    
-    def analyze(self, stock_code: str, use_cache: bool = True) -> dict:
-        """完整分析流程
-        
-        Args:
-            stock_code: 股票代码
-            use_cache: 是否使用缓存
-        
-        Returns:
-            dict: 各Agent的分析结果
+    def __init__(self, mode: str = "hybrid"):
         """
-        results = {
-            'stock_code': stock_code,
-        }
-        
-        # 1. 资金Agent
-        results['fund'] = self.fund_agent.analyze(stock_code)
-        
-        # 2. 消息Agent
-        results['news'] = self.news_agent.analyze(stock_code)
-        
-        # 3. 情绪Agent
-        results['sentiment'] = self.sentiment_agent.analyze(stock_code)
-        
-        # 4. 研究Agent（多空辩论）
-        results['research'] = self.research_agent.analyze(
-            stock_code,
-            fund_analysis=results['fund'],
-            news_analysis=results['news'],
-            sentiment_analysis=results['sentiment']
-        )
-        
-        # 5. 决策Agent（最终决策）
-        results['decision'] = self.decision_agent.analyze(
-            stock_code,
-            fund_analysis=results['fund'],
-            news_analysis=results['news'],
-            sentiment_analysis=results['sentiment'],
-            research_result=results['research']
-        )
-        
-        return results
+        Args:
+            mode: 协作模式 (parallel/sequential/hybrid)
+        """
+        self.mode = mode
+        self.fund = FundAgent()
+        self.news = NewsAgent()
+        self.sentiment = SentimentAgent()
+        self.research = ResearchAgent()
+        self.decision = DecisionAgent()
+        self.orchestrator = MultiAgentOrchestrator(mode=mode)
     
-    def quick_decide(self, stock_code: str) -> str:
-        """快速决策（直接输出结论）"""
-        results = self.analyze(stock_code)
-        return results['decision']
+    def analyze(self, stock_code: str) -> dict:
+        """完整分析"""
+        with ContextScope(stock_code):
+            results = self.orchestrator.analyze(stock_code, {
+                "fund": self.fund,
+                "news": self.news,
+                "sentiment": self.sentiment,
+                "research": self.research,
+                "decision": self.decision
+            })
+            # 保存记忆
+            try:
+                add_stock_summary(stock_code, f"决策: {results.get('decision','')[:200]}")
+            except:
+                pass
+            return results
+    
+    def quick(self, stock_code: str) -> str:
+        """快速决策"""
+        return self.analyze(stock_code).get('decision', '')
 
 
-def analyze(stock_code: str) -> dict:
-    """便捷函数 - 完整分析"""
-    return TradingAgents().analyze(stock_code)
-
-
-def quick_decide(stock_code: str) -> str:
-    """便捷函数 - 快速决策"""
-    return TradingAgents().quick_decide(stock_code)
+# 便捷函数
+analyze = lambda code: TradingAgents().analyze(code)
+quick_decide = lambda code: TradingAgents().quick(code)
+market_check = quick_market_check
+market_analysis = analyze_market_movement
 
 
 __all__ = [
+    # 核心类
     'TradingAgents',
+    'BaseAgent',
+    # Agent
+    'FundAgent',
+    'NewsAgent', 
+    'SentimentAgent',
+    'ResearchAgent',
+    'DecisionAgent',
+    'MarketAlertAgent',
+    # 便捷函数
     'analyze',
     'quick_decide',
-    'analyze_fund',
-    'analyze_news', 
-    'analyze_sentiment',
-    'research',
-    'decide',
-    'clear_cache'
+    'market_check',
+    'market_analysis',
+    # 协作
+    'MultiAgentOrchestrator',
+    'hybrid_analyze',
+    'parallel_analyze',
+    # 工具
+    'ContextScope',
+    'clear_cache',
 ]

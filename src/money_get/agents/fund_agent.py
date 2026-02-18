@@ -1,7 +1,10 @@
 """资金Agent - 分析资金流向"""
 from .base import BaseAgent
 from .cache import get_cache_key, get_cached_result, save_cache, CACHE_CONFIG
-from money_get.db import get_fund_flow_data, get_kline, get_stock
+from money_get.db import get_fund_flow_data, get_kline, get_stock, get_realtime_price
+import logging
+
+logger = logging.getLogger("money_get")
 
 
 class FundAgent(BaseAgent):
@@ -30,12 +33,16 @@ class FundAgent(BaseAgent):
         klines = get_kline(stock_code, limit=30)
         stock = get_stock(stock_code) or {}
         
+        # 尝试获取实时价格
+        realtime = get_realtime_price(stock_code)
+        
         # 准备数据
         data = {
             'stock_code': stock_code,
             'stock_name': stock.get('name') or stock_code,
             'fund_flow': [dict(f) for f in fund_data] if fund_data else [],
-            'price_data': [dict(k) for k in klines] if klines else []
+            'price_data': [dict(k) for k in klines] if klines else [],
+            'realtime': realtime if realtime else {}
         }
         
         # 生成key
@@ -62,9 +69,22 @@ class FundAgent(BaseAgent):
         """构建提示词"""
         stock_name = data.get('stock_name', '')
         fund_flow = data.get('fund_flow', [])
+        realtime = data.get('realtime', {})
+        
+        # 实时价格
+        price_info = ""
+        if realtime:
+            price_info = f"""当前价格:
+- 最新价: {realtime.get('price', 'N/A')}
+- 涨跌: {realtime.get('change', 'N/A')}
+- 涨跌幅: {realtime.get('pct', 'N/A')}%
+- 成交量: {realtime.get('volume', 'N/A')}
+- 成交额: {realtime.get('amount', 'N/A')}
+
+"""
         
         # 整理资金数据
-        fund_info = f"股票: {stock_name}\n\n资金流向(近10日):\n"
+        fund_info = f"股票: {stock_name}\n\n{price_info}资金流向(近10日):\n"
         for f in fund_flow:
             date = f.get('date', '')
             net_main = f.get('net_main', 'N/A')

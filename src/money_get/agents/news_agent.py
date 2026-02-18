@@ -1,4 +1,4 @@
-"""消息Agent - 分析新闻和政策"""
+"""消息Agent - 分析新闻和政策（含异动监控）"""
 from .base import BaseAgent
 from .cache import get_cache_key, get_cached_result, save_cache, CACHE_CONFIG
 from money_get.db import get_news, get_stock
@@ -18,6 +18,7 @@ class NewsAgent(BaseAgent):
 2. 分析行业政策
 3. 判断利好/利空
 4. 评估影响程度
+5. 识别市场异动
 
 输出格式要求：
 - 用中文输出
@@ -62,7 +63,6 @@ class NewsAgent(BaseAgent):
         stock_name = data.get('stock_name', '')
         news = data.get('news', [])
         
-        # 整理新闻
         news_info = f"股票: {stock_name}\n\n最新新闻:\n"
         for i, n in enumerate(news[:10]):
             title = n.get('title', '')[:60]

@@ -69,27 +69,28 @@ class SentimentAgent(BaseAgent):
     
     def _search_hot(self) -> str:
         """搜索实时热点"""
-        try:
-            result = subprocess.run(
-                ['mcporter', 'call', 'minimax.web_search', 
-                 '--output', 'json', 'query=A股 今日热点板块主线'],
-                capture_output=True,
-                text=True,
-                timeout=15,
-                cwd='/home/lijiang/.openclaw/workspace'
-            )
-            output = result.stdout
-            if output and 'error' not in output:
-                data = json.loads(output)
-                items = data.get('data', []) or data.get('organic', [])
-                if items:
-                    lines = ["实时热点搜索:"]
-                    for item in items[:5]:
-                        title = item.get('title', '')[:50]
-                        lines.append(f"- {title}")
-                    return '\n'.join(lines)
-        except:
-            pass
+        return ""  # 暂时禁用MCP搜索，避免挂起
+        # try:
+        #     result = subprocess.run(
+        #         ['mcporter', 'call', 'minimax.web_search', 
+        #          '--output', 'json', 'query=A股 今日热点板块主线'],
+        #         capture_output=True,
+        #         text=True,
+        #         timeout=10,  # 缩短超时
+        #         cwd='/home/lijiang/.openclaw/workspace'
+        #     )
+        #     output = result.stdout
+        #     if output and 'error' not in output:
+        #         data = json.loads(output)
+        #         items = data.get('data', []) or data.get('organic', [])
+        #         if items:
+        #             lines = ["实时热点搜索:"]
+        #             for item in items[:5]:
+        #                 title = item.get('title', '')[:50]
+        #                 lines.append(f"- {title}")
+        #             return '\n'.join(lines)
+        # except:
+        #     pass
         return ""
     
     def _build_prompt(self, data: dict, search_result: str = "") -> str:
@@ -125,7 +126,7 @@ class SentimentAgent(BaseAgent):
         
         prompt = f"""{sector_info}{trend_info}{lhb_info}
 
-{fearch_result}
+{search_result}
 
 请分析：
 1. 当前市场主线（哪些板块持续热）

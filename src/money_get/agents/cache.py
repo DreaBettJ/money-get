@@ -36,13 +36,14 @@ def get_cached_result(key: str, max_age_days: int = 7) -> Optional[str]:
 
 
 def save_cache(key: str, result: str):
-    """保存缓存"""
-    cache_file = CACHE_DIR / f"{key}.json"
-    with open(cache_file, 'w') as f:
-        json.dump({
-            'result': result,
-            'time': datetime.now().isoformat()
-        }, f, ensure_ascii=False)
+    """保存缓存 - 暂时禁用"""
+    pass
+    # cache_file = CACHE_DIR / f"{key}.json"
+    # with open(cache_file, 'w') as f:
+    #     json.dump({
+    #         'result': result,
+    #         'time': datetime.now().isoformat()
+    #     }, f, ensure_ascii=False)
 
 
 def clear_cache(pattern: str = "*"):
