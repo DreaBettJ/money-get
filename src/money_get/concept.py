@@ -4,8 +4,11 @@
 
 映射表使用东方财富实际概念名称
 """
+import logging
 from typing import List, Dict, Optional
 import time
+
+logger = logging.getLogger(__name__)
 
 REQUEST_DELAY = 0.5
 _last_request_time = 0
@@ -401,7 +404,7 @@ def select_by_policy_concepts(policy_keywords: List[str], top_n: int = 30) -> Li
     concepts = match_concepts(policy_keywords)
     
     if not concepts:
-        print("未匹配到概念板块")
+        logger.info("未匹配到概念板块")
         return []
     
     _logger.info(f"匹配到 {len(concepts)} 个概念: {concepts[:5]}...")
@@ -425,7 +428,7 @@ def select_by_policy_concepts(policy_keywords: List[str], top_n: int = 30) -> Li
 
 # 测试
 if __name__ == "__main__":
-    print("=== 概念板块匹配测试 ===\n")
+    logger.info("=== 概念板块匹配测试 ===\n")
     
     keywords = ["新能源", "人工智能", "医药"]
     
@@ -434,7 +437,7 @@ if __name__ == "__main__":
     _logger.info(f"匹配概念: {len(concepts)} 个")
     for c in concepts[:10]:
         _logger.info(f"  - {c}")
-    print()
+    logger.info("")
     
     # 获取第一个概念的成分股
     if concepts:

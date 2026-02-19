@@ -1,8 +1,11 @@
 """批量回测系统"""
+import logging
 from money_get.backtest import TimeMachine, BacktestEngine
 from money_get.core.db import get_connection
 from datetime import datetime, timedelta
 import json
+
+logger = logging.getLogger(__name__)
 
 
 def get_available_dates(code: str, min_count: int = 10) -> list:
@@ -76,9 +79,9 @@ def run_batch_backtest(
     Returns:
         dict: 回测结果
     """
-    print(f"\n{'='*60}")
-    print(f"📊 批量回测 - {code}")
-    print(f"{'='*60}")
+    logger.info(f"\n{'='*60}")
+    logger.info(f"📊 批量回测 - {code}")
+    logger.info(f"{'='*60}")
     
     # 获取可用日期
     available_dates = get_available_dates(code)
@@ -86,7 +89,7 @@ def run_batch_backtest(
     if not available_dates:
         return {'error': '无可用数据'}
     
-    print(f"可用日期: {len(available_dates)}天")
+    logger.info(f"可用日期: {len(available_dates)}天")
     
     # 确定回测范围
     if end_date:
@@ -100,7 +103,7 @@ def run_batch_backtest(
         start_idx = min(days, end_idx)
     
     test_dates = available_dates[start_idx:end_idx]
-    print(f"回测范围: {test_dates[-1]} ~ {test_dates[0]} ({len(test_dates)}天)")
+    logger.info(f"回测范围: {test_dates[-1]} ~ {test_dates[0]} ({len(test_dates)}天)")
     
     # 运行回测
     engine = BacktestEngine(10000)
@@ -114,19 +117,19 @@ def run_batch_backtest(
         result = engine.run_single(code, decision, date)
         results.append(result)
         
-        print(f"  {date}: {decision} → 次日涨跌: {result.get('profit_pct', 0):.2f}%")
+        logger.info(f"  {date}: {decision} → 次日涨跌: {result.get('profit_pct', 0):.2f}%")
     
     # 统计
     stats = engine.get_stats()
     
-    print(f"\n{'='*60}")
-    print(f"📈 回测统计")
-    print(f"{'='*60}")
-    print(f"总决策: {stats['total_decisions']}")
-    print(f"买入次数: {stats['buy_decisions']}")
-    print(f"正确次数: {stats['correct']}")
-    print(f"胜率: {stats['win_rate']:.1f}%")
-    print(f"平均收益: {stats['avg_profit']:.3f}%")
+    logger.info(f"\n{'='*60}")
+    logger.info(f"📈 回测统计")
+    logger.info(f"{'='*60}")
+    logger.info(f"总决策: {stats['total_decisions']}")
+    logger.info(f"买入次数: {stats['buy_decisions']}")
+    logger.info(f"正确次数: {stats['correct']}")
+    logger.info(f"胜率: {stats['win_rate']:.1f}%")
+    logger.info(f"平均收益: {stats['avg_profit']:.3f}%")
     
     return {
         'code': code,
@@ -146,11 +149,11 @@ def run_multi_stock_backtest(codes: list, days: int = 30) -> dict:
     Returns:
         dict: 综合回测结果
     """
-    print(f"\n{'='*60}")
-    print(f"📊 多股票批量回测")
-    print(f"{'='*60}")
-    print(f"股票数: {len(codes)}")
-    print(f"每只回测: {days}天")
+    logger.info(f"\n{'='*60}")
+    logger.info(f"📊 多股票批量回测")
+    logger.info(f"{'='*60}")
+    logger.info(f"股票数: {len(codes)}")
+    logger.info(f"每只回测: {days}天")
     
     all_stats = []
     
@@ -160,7 +163,7 @@ def run_multi_stock_backtest(codes: list, days: int = 30) -> dict:
             if 'error' not in result:
                 all_stats.append(result['stats'])
         except Exception as e:
-            print(f"{code}: 错误 - {e}")
+            logger.info(f"{code}: 错误 - {e}")
     
     # 汇总统计
     if not all_stats:
@@ -173,15 +176,15 @@ def run_multi_stock_backtest(codes: list, days: int = 30) -> dict:
     
     overall_win_rate = total_correct / total_buy * 100 if total_buy > 0 else 0
     
-    print(f"\n{'='*60}")
-    print(f"📈 汇总统计")
-    print(f"{'='*60}")
-    print(f"股票数: {len(all_stats)}")
-    print(f"总决策: {total_decisions}")
-    print(f"总买入: {total_buy}")
-    print(f"总正确: {total_correct}")
-    print(f"总体胜率: {overall_win_rate:.1f}%")
-    print(f"平均收益: {avg_profit:.3f}%")
+    logger.info(f"\n{'='*60}")
+    logger.info(f"📈 汇总统计")
+    logger.info(f"{'='*60}")
+    logger.info(f"股票数: {len(all_stats)}")
+    logger.info(f"总决策: {total_decisions}")
+    logger.info(f"总买入: {total_buy}")
+    logger.info(f"总正确: {total_correct}")
+    logger.info(f"总体胜率: {overall_win_rate:.1f}%")
+    logger.info(f"平均收益: {avg_profit:.3f}%")
     
     return {
         'stocks': len(all_stats),
@@ -197,9 +200,9 @@ def run_multi_stock_backtest(codes: list, days: int = 30) -> dict:
 # ============ 示例 ============
 if __name__ == "__main__":
     # 单股票回测
-    print("=== 单股票回测 ===")
+    logger.info("=== 单股票回测 ===")
     result = run_batch_backtest('600519', days=10)
     
     # 多股票回测
-    print("\n=== 多股票回测 ===")
+    logger.info("\n=== 多股票回测 ===")
     result = run_multi_stock_backtest(['600519', '300719'], days=10)

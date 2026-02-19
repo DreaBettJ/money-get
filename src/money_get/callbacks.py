@@ -1,9 +1,12 @@
 """自定义回调处理器"""
+import logging
 import json
 import os
 from pathlib import Path
 from datetime import datetime
 from langchain_core.callbacks import BaseCallbackHandler
+
+logger = logging.getLogger(__name__)
 
 
 class VerboseCallbackHandler(BaseCallbackHandler):
@@ -14,10 +17,10 @@ class VerboseCallbackHandler(BaseCallbackHandler):
         _logger.info("📤 PROMPT (LLM Input)")
         _logger.info("="*50)
         for i, p in enumerate(prompts):
-            print(f"\n--- Message {i+1} ---")
+            logger.info(f"\n--- Message {i+1} ---")
             # 截断太长
-            print(p[:2000] if len(p) > 2000 else p)
-        print()
+            logger.info(p[:2000] if len(p) > 2000 else p)
+        logger.info("")
     
     def on_llm_end(self, response, **kwargs):
         _logger.info("="*50)
@@ -27,19 +30,19 @@ class VerboseCallbackHandler(BaseCallbackHandler):
         if hasattr(response, 'generations') and response.generations:
             for gen in response.generations[0]:
                 content = gen.text if hasattr(gen, 'text') else str(gen)
-                print(content[:2000] if len(content) > 2000 else content)
+                logger.info(content[:2000] if len(content) > 2000 else content)
         _logger.info("\n" + "="*50)
         
         # 打印 token 使用
         if hasattr(response, 'llm_output') and response.llm_output:
             usage = response.llm_output.get('usage', {})
-            print(f"📊 Token: prompt={usage.get('prompt_tokens', 0)}, "
+            logger.info(f"📊 Token: prompt={usage.get('prompt_tokens', 0)}, "
                   f"completion={usage.get('completion_tokens', 0)}, "
                   f"total={usage.get('total_tokens', 0)}")
             _logger.info("="*50 + "\n")
     
     def on_llm_error(self, error, **kwargs):
-        print(f"\n❌ LLM Error: {error}\n")
+        logger.info(f"\n❌ LLM Error: {error}\n")
 
 
 class TraceCallbackHandler(BaseCallbackHandler):
@@ -91,6 +94,6 @@ class TraceCallbackHandler(BaseCallbackHandler):
         try:
             with open(self.trace_file, 'a', encoding='utf-8') as f:
                 f.write(json.dumps(entry, ensure_ascii=False) + '\n')
-            print(f"📝 Traced to: {self.trace_file}")
+            logger.info(f"📝 Traced to: {self.trace_file}")
         except Exception as e:
-            print(f"⚠️ Trace write failed: {e}")
+            logger.info(f"⚠️ Trace write failed: {e}")

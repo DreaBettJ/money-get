@@ -62,7 +62,7 @@ def clean_old_logs(days: int = 7):
         if f.is_file():
             if os.path.getmtime(f) < cutoff:
                 f.unlink()
-                print(f"删除旧日志: {f.name}")
+                logger.info(f"删除旧日志: {f.name}")
 
 
 def log_trade(action: str, code: str, price: float, quantity: int, reason: str = ""):

@@ -1,9 +1,12 @@
 """完整选股系统 - 扫描 + 多因子分析"""
+import logging
 from money_get.full_scan import full_scan, STOCK_POOL
 from money_get.enhanced_factors import EnhancedFactor
 from money_get.core.scraper import get_stock_price
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
+
+logger = logging.getLogger(__name__)
 
 
 def scan_and_analyze(stock_count: int = 100, min_change: float = 0) -> list:
@@ -16,23 +19,23 @@ def scan_and_analyze(stock_count: int = 100, min_change: float = 0) -> list:
     Returns:
         list: 分析结果列表
     """
-    print(f"\n{'='*70}")
-    print(f"🔍 全市场扫描 + 多因子分析")
-    print(f"{'='*70}")
+    logger.info(f"\n{'='*70}")
+    logger.info(f"🔍 全市场扫描 + 多因子分析")
+    logger.info(f"{'='*70}")
     
     # 1. 扫描市场
-    print("\n📊 阶段1: 市场扫描...")
+    logger.info("\n📊 阶段1: 市场扫描...")
     start = time.time()
     results = full_scan(stock_count)
-    print(f"扫描完成，耗时 {time.time()-start:.1f}秒")
+    logger.info(f"扫描完成，耗时 {time.time()-start:.1f}秒")
     
     # 2. 过滤涨幅
     if min_change > 0:
         results = [r for r in results if r['change'] >= min_change]
-        print(f"过滤涨幅>{min_change}%后: {len(results)}只")
+        logger.info(f"过滤涨幅>{min_change}%后: {len(results)}只")
     
     # 3. 多因子分析（只分析Top 50，避免太慢）
-    print("\n📈 阶段2: 多因子分析 (Top 50)...")
+    logger.info("\n📈 阶段2: 多因子分析 (Top 50)...")
     analyze_count = min(50, len(results))
     analyzed = []
     
@@ -44,9 +47,9 @@ def scan_and_analyze(stock_count: int = 100, min_change: float = 0) -> list:
             analyzed.append(result)
             
             if i % 10 == 0:
-                print(f"  进度: {i}/{analyze_count}")
+                logger.info(f"  进度: {i}/{analyze_count}")
         except Exception as e:
-            print(f"  分析失败 {r['code']}: {e}")
+            logger.info(f"  分析失败 {r['code']}: {e}")
     
     # 4. 排序
     analyzed.sort(key=lambda x: x['total_score'], reverse=True)
@@ -63,9 +66,9 @@ def quick_scan_and_rank(top_n: int = 30) -> list:
     Returns:
         list: 排序后的结果
     """
-    print(f"\n{'='*60}")
-    print(f"⚡ 快速选股 (Top {top_n})")
-    print(f"{'='*60}")
+    logger.info(f"\n{'='*60}")
+    logger.info(f"⚡ 快速选股 (Top {top_n})")
+    logger.info(f"{'='*60}")
     
     # 扫描全部
     results = full_scan(500)
@@ -138,7 +141,7 @@ def run_full_analysis():
     """运行完整分析"""
     # 方法1: 完整多因子分析（较慢）
     results = scan_and_analyze(500, min_change=3)
-    print(format_recommend(results, "多因子选股结果"))
+    logger.info(format_recommend(results, "多因子选股结果"))
     
     return results
 
@@ -146,7 +149,7 @@ def run_full_analysis():
 def run_quick_selection():
     """快速选股"""
     results = quick_scan_and_rank(30)
-    print(format_recommend(results, "快速选股结果"))
+    logger.info(format_recommend(results, "快速选股结果"))
     return results
 
 

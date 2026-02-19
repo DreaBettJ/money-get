@@ -1,7 +1,10 @@
 """K线数据爬取脚本"""
+import logging
 import requests
 import json
 from money_get.db import get_connection
+
+logger = logging.getLogger(__name__)
 
 
 def fetch_kline(code: str, days: int = 320) -> list:
@@ -73,7 +76,7 @@ def save_kline(code: str, klines: list) -> int:
             """, (code, date, float(open_price), float(close), float(high), float(low), float(volume)))
             count += 1
         except Exception as e:
-            print(f"插入失败: {date}, {e}")
+            logger.info(f"插入失败: {date}, {e}")
     
     conn.commit()
     conn.close()
@@ -89,13 +92,13 @@ def sync_kline(code: str) -> int:
     Returns:
         int: 保存的记录数
     """
-    print(f"获取 {code} K线数据...")
+    logger.info(f"获取 {code} K线数据...")
     klines = fetch_kline(code)
-    print(f"获取到 {len(klines)} 条数据")
+    logger.info(f"获取到 {len(klines)} 条数据")
     
     if klines:
         count = save_kline(code, klines)
-        print(f"保存 {count} 条数据")
+        logger.info(f"保存 {count} 条数据")
         return count
     
     return 0

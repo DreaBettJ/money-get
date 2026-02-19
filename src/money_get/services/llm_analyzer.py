@@ -2,9 +2,12 @@
 
 基于 MiniMax API 提供股票分析能力
 """
+import logging
 import json
 from typing import Dict, Any, List, Optional
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # 读取配置
 def get_config() -> dict:
@@ -28,7 +31,7 @@ def get_llm_client():
             temperature=0.7,
         )
     except Exception as e:
-        print(f"LLM init error: {e}")
+        logger.info(f"LLM init error: {e}")
         return None
 
 

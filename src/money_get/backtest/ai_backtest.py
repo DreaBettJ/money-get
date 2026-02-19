@@ -179,14 +179,14 @@ class AIBacktest:
                     profit = d.get('profit_pct')
                     if profit is not None:
                         status = "✅" if profit > 0 else "❌"
-                        print(f"  {date}: {d['decision']:4s} → {profit:+.2f}% {status}")
+                        logger.info(f"  {date}: {d['decision']:4s} → {profit:+.2f}% {status}")
                     else:
-                        print(f"  {date}: {d['decision']:4s} → 无次日数据")
+                        logger.info(f"  {date}: {d['decision']:4s} → 无次日数据")
                     success += 1
                 else:
                     fail += 1
             except Exception as e:
-                print(f"  {date}: 错误 - {e}")
+                logger.info(f"  {date}: 错误 - {e}")
                 fail += 1
         
         return self.get_stats()
@@ -260,45 +260,45 @@ def run_ai_backtest(code: str, days: int = 20) -> dict:
     if not dates:
         return {'error': '无可用日期'}
     
-    print(f"回测日期范围: {dates[-1]} ~ {dates[0]}")
+    logger.info(f"回测日期范围: {dates[-1]} ~ {dates[0]}")
     
     # 运行回测
     backtest = AIBacktest(10000)
     stats = backtest.run_batch(code, dates)
     
     # 打印统计
-    print(f"\n{'='*60}")
-    print(f"📊 回测统计")
-    print(f"{'='*60}")
-    print(f"总决策: {stats['total']}")
-    print(f"买入: {stats['buy']}")
-    print(f"卖出: {stats['sell']}")
-    print(f"持有: {stats['hold']}")
-    print(f"\n买入统计:")
-    print(f"  正确: {stats['buy_correct']}/{stats['buy']}")
-    print(f"  胜率: {stats['buy_win_rate']:.1f}%")
-    print(f"  平均收益: {stats['avg_profit']:.3f}%")
-    print(f"  最终资金: {stats['final_capital']:.2f}元")
+    logger.info(f"\n{'='*60}")
+    logger.info(f"📊 回测统计")
+    logger.info(f"{'='*60}")
+    logger.info(f"总决策: {stats['total']}")
+    logger.info(f"买入: {stats['buy']}")
+    logger.info(f"卖出: {stats['sell']}")
+    logger.info(f"持有: {stats['hold']}")
+    logger.info(f"\n买入统计:")
+    logger.info(f"  正确: {stats['buy_correct']}/{stats['buy']}")
+    logger.info(f"  胜率: {stats['buy_win_rate']:.1f}%")
+    logger.info(f"  平均收益: {stats['avg_profit']:.3f}%")
+    logger.info(f"  最终资金: {stats['final_capital']:.2f}元")
     
     return stats
 
 
 def run_multi_ai_backtest(codes: list, days: int = 20) -> dict:
     """多股票AI回测"""
-    print(f"\n{'='*60}")
-    print(f"📊 多股票AI回测")
-    print(f"{'='*60}")
+    logger.info(f"\n{'='*60}")
+    logger.info(f"📊 多股票AI回测")
+    logger.info(f"{'='*60}")
     
     all_stats = []
     
     for code in codes:
         try:
-            print(f"\n--- {code} ---")
+            logger.info(f"\n--- {code} ---")
             stats = run_ai_backtest(code, days)
             if 'error' not in stats:
                 all_stats.append(stats)
         except Exception as e:
-            print(f"{code}: 错误 - {e}")
+            logger.info(f"{code}: 错误 - {e}")
     
     if not all_stats:
         return {'error': '无有效结果'}
@@ -309,14 +309,14 @@ def run_multi_ai_backtest(codes: list, days: int = 20) -> dict:
     total_profit = sum(s['avg_profit'] * s['buy'] for s in all_stats) / total_buy if total_buy > 0 else 0
     overall_win_rate = total_correct / total_buy * 100 if total_buy > 0 else 0
     
-    print(f"\n{'='*60}")
-    print(f"📈 总体统计")
-    print(f"{'='*60}")
-    print(f"股票数: {len(all_stats)}")
-    print(f"总买入: {total_buy}")
-    print(f"总正确: {total_correct}")
-    print(f"总体胜率: {overall_win_rate:.1f}%")
-    print(f"平均收益: {total_profit:.3f}%")
+    logger.info(f"\n{'='*60}")
+    logger.info(f"📈 总体统计")
+    logger.info(f"{'='*60}")
+    logger.info(f"股票数: {len(all_stats)}")
+    logger.info(f"总买入: {total_buy}")
+    logger.info(f"总正确: {total_correct}")
+    logger.info(f"总体胜率: {overall_win_rate:.1f}%")
+    logger.info(f"平均收益: {total_profit:.3f}%")
     
     return {
         'stocks': len(all_stats),
@@ -330,9 +330,9 @@ def run_multi_ai_backtest(codes: list, days: int = 20) -> dict:
 # ============ 示例 ============
 if __name__ == "__main__":
     # 单股票回测
-    print("=== 单股票AI回测 ===")
+    logger.info("=== 单股票AI回测 ===")
     run_ai_backtest('600519', 20)
     
     # 多股票回测
-    print("\n=== 多股票AI回测 ===")
+    logger.info("\n=== 多股票AI回测 ===")
     run_multi_ai_backtest(['600519', '300719'], 20)

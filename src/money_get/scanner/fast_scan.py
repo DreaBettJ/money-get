@@ -1,7 +1,10 @@
 """快速全市场扫描"""
+import logging
 from money_get.core.scraper import get_stock_price
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
+
+logger = logging.getLogger(__name__)
 
 
 # 股票池
@@ -52,7 +55,7 @@ def fast_scan(max_stocks: int = 50) -> list:
     stocks = list(set(STOCKS))[:max_stocks]
     results = []
     
-    print(f"🔍 扫描 {len(stocks)} 只股票...")
+    logger.info(f"🔍 扫描 {len(stocks)} 只股票...")
     start = time.time()
     
     # 并发扫描
@@ -63,10 +66,10 @@ def fast_scan(max_stocks: int = 50) -> list:
             if result:
                 results.append(result)
             if i % 10 == 0:
-                print(f"  进度: {i}/{len(stocks)}")
+                logger.info(f"  进度: {i}/{len(stocks)}")
     
     elapsed = time.time() - start
-    print(f"完成，耗时 {elapsed:.1f}秒")
+    logger.info(f"完成，耗时 {elapsed:.1f}秒")
     
     # 排序
     results.sort(key=lambda x: x['change'], reverse=True)
@@ -75,21 +78,21 @@ def fast_scan(max_stocks: int = 50) -> list:
 
 def show_results(results: list, top_n: int = 20):
     """显示结果"""
-    print(f"\n{'排名':<4} {'代码':<8} {'名称':<12} {'价格':<10} {'涨幅'}")
-    print("-" * 55)
+    logger.info(f"\n{'排名':<4} {'代码':<8} {'名称':<12} {'价格':<10} {'涨幅'}")
+    logger.info("-" * 55)
     
     for i, r in enumerate(results[:top_n], 1):
-        print(f"{i:<4} {r['code']:<8} {r['name']:<12} {r['price']:<10.2f} {r['change']:+.2f}%")
+        logger.info(f"{i:<4} {r['code']:<8} {r['name']:<12} {r['price']:<10.2f} {r['change']:+.2f}%")
     
     # Top 5
-    print(f"\n🔥 涨幅前5:")
+    logger.info(f"\n🔥 涨幅前5:")
     for r in results[:5]:
-        print(f"  {r['code']} {r['name']}: {r['change']:+.2f}%")
+        logger.info(f"  {r['code']} {r['name']}: {r['change']:+.2f}%")
     
     # Down 5
-    print(f"\n📉 跌幅前5:")
+    logger.info(f"\n📉 跌幅前5:")
     for r in results[-5:]:
-        print(f"  {r['code']} {r['name']}: {r['change']:+.2f}%")
+        logger.info(f"  {r['code']} {r['name']}: {r['change']:+.2f}%")
 
 
 if __name__ == "__main__":

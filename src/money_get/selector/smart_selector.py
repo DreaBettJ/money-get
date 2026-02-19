@@ -592,41 +592,41 @@ def run_smart_selector():
     recommendations = selector.scan_and_recommend(100)
     
     # 2. 显示推荐
-    print(f"\n{'='*70}")
-    print("🎯 智能选股推荐")
-    print(f"{'='*70}")
-    print(f"{'代码':<8} {'名称':<12} {'价格':<8} {'涨幅':<8} {'评分':<6} {'信心度':<8} {'信号'}")
-    print("-" * 70)
+    logger.info(f"\n{'='*70}")
+    logger.info("🎯 智能选股推荐")
+    logger.info(f"{'='*70}")
+    logger.info(f"{'代码':<8} {'名称':<12} {'价格':<8} {'涨幅':<8} {'评分':<6} {'信心度':<8} {'信号'}")
+    logger.info("-" * 70)
     
     for r in recommendations[:20]:
-        print(f"{r['code']:<8} {r['name']:<12} {r['price']:<8.2f} {r['change']:+.2f}% {r['factor_score']:<6.1f} {r['confidence']:<8} {r['signal']}")
+        logger.info(f"{r['code']:<8} {r['name']:<12} {r['price']:<8.2f} {r['change']:+.2f}% {r['factor_score']:<6.1f} {r['confidence']:<8} {r['signal']}")
     
     # 3. 推荐买入
     buy_recs = [r for r in recommendations if r['should_buy']][:5]
-    print(f"\n✅ 推荐买入 ({len(buy_recs)}只):")
+    logger.info(f"\n✅ 推荐买入 ({len(buy_recs)}只):")
     for r in buy_recs:
-        print(f"  {r['code']} {r['name']}: 信心度{r['confidence']}, 原因: {r['reason']}")
+        logger.info(f"  {r['code']} {r['name']}: 信心度{r['confidence']}, 原因: {r['reason']}")
     
     # 4. 系统状态
     status = selector.get_status()
-    print(f"\n💰 账户状态:")
-    print(f"  总资产: {status['position']['total_assets']:.2f}元")
-    print(f"  可用资金: {status['position']['capital']:.2f}元")
-    print(f"  持仓数: {len(status['position']['positions'])}只")
-    print(f"  持仓:")
+    logger.info(f"\n💰 账户状态:")
+    logger.info(f"  总资产: {status['position']['total_assets']:.2f}元")
+    logger.info(f"  可用资金: {status['position']['capital']:.2f}元")
+    logger.info(f"  持仓数: {len(status['position']['positions'])}只")
+    logger.info(f"  持仓:")
     for code, pos in status['position']['positions'].items():
-        print(f"    {code}: {pos['shares']}股 @ {pos['price']}")
+        logger.info(f"    {code}: {pos['shares']}股 @ {pos['price']}")
     
     # 5. 决策链路
-    print(f"\n📊 决策统计:")
-    print(f"  近期决策数: {status['recent_decisions']}")
+    logger.info(f"\n📊 决策统计:")
+    logger.info(f"  近期决策数: {status['recent_decisions']}")
     
     # 6. 缺失信息
-    print(f"\n🔍 系统评估 (需要自进化):")
-    print(f"  - 是否有基本面数据: 否 (需要PE/ROE)")
-    print(f"  - 是否有龙虎榜数据: 是")
-    print(f"  - 是否有北向资金: 否")
-    print(f"  - 是否有实时新闻: 是")
+    logger.info(f"\n🔍 系统评估 (需要自进化):")
+    logger.info(f"  - 是否有基本面数据: 否 (需要PE/ROE)")
+    logger.info(f"  - 是否有龙虎榜数据: 是")
+    logger.info(f"  - 是否有北向资金: 否")
+    logger.info(f"  - 是否有实时新闻: 是")
     
     return recommendations
 

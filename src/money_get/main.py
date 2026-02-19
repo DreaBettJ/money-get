@@ -1,4 +1,5 @@
 """股票分析 CLI 入口。"""
+import logging
 import argparse
 import json
 from datetime import datetime
@@ -46,7 +47,7 @@ def cmd_buy(args):
     log_trade("买入", args.code, args.price, args.quantity, args.reason or "")
     logger.info(f"买入: {args.code} x {args.quantity} @ {args.price}")
     
-    print(f"✅ 已记录买入: {args.code} x {args.quantity} @ {args.price}")
+    logger.info(f"✅ 已记录买入: {args.code} x {args.quantity} @ {args.price}")
 
 
 def cmd_sell(args):
@@ -68,7 +69,7 @@ def cmd_sell(args):
     log_trade("卖出", args.code, args.price, args.quantity, args.reason or "")
     logger.info(f"卖出: {args.code} x {args.quantity} @ {args.price}")
     
-    print(f"✅ 已记录卖出: {args.code} x {args.quantity} @ {args.price}")
+    logger.info(f"✅ 已记录卖出: {args.code} x {args.quantity} @ {args.price}")
 
 
 def cmd_portfolio(args):
@@ -97,60 +98,60 @@ def cmd_portfolio(args):
                     del holdings[code]
     
     if not holdings:
-        print("📭 当前无持仓")
+        logger.info("📭 当前无持仓")
         return
     
-    print("=" * 50)
-    print("📊 当前持仓")
-    print("=" * 50)
+    logger.info("=" * 50)
+    logger.info("📊 当前持仓")
+    logger.info("=" * 50)
     total_value = 0
     total_cost = 0
     for code, h in holdings.items():
         qty = h["qty"]
         cost = h["cost"]
         avg_cost = cost / qty if qty > 0 else 0
-        print(f"{code}: {qty}股 | 成本: {avg_cost:.2f}元 | 总成本: {cost:.2f}元")
+        logger.info(f"{code}: {qty}股 | 成本: {avg_cost:.2f}元 | 总成本: {cost:.2f}元")
         total_cost += cost
-    print("-" * 50)
-    print(f"总成本: {total_cost:.2f}元")
+    logger.info("-" * 50)
+    logger.info(f"总成本: {total_cost:.2f}元")
 
 
 def cmd_stats(args):
     """交易统计"""
     trades = load_trades()
     if not trades:
-        print("📭 暂无交易记录")
+        logger.info("📭 暂无交易记录")
         return
     
     buys = [t for t in trades if t.get("action") in ["买入", "buy"]]
     sells = [t for t in trades if t.get("action") in ["卖出", "sell"]]
     
-    print("=" * 50)
-    print("📈 交易统计")
-    print("=" * 50)
-    print(f"总交易次数: {len(trades)}")
-    print(f"买入次数: {len(buys)}")
-    print(f"卖出次数: {len(sells)}")
+    logger.info("=" * 50)
+    logger.info("📈 交易统计")
+    logger.info("=" * 50)
+    logger.info(f"总交易次数: {len(trades)}")
+    logger.info(f"买入次数: {len(buys)}")
+    logger.info(f"卖出次数: {len(sells)}")
     
     # 简单统计
     total_buy = sum(t.get("price", 0) * t.get("quantity", 0) for t in buys)
     total_sell = sum(t.get("price", 0) * t.get("quantity", 0) for t in sells)
-    print(f"\n买入总额: {total_buy:.2f}元")
-    print(f"卖出总额: {total_sell:.2f}元")
+    logger.info(f"\n买入总额: {total_buy:.2f}元")
+    logger.info(f"卖出总额: {total_sell:.2f}元")
     if total_buy > 0:
-        print(f"持仓成本: {total_buy - total_sell:.2f}元")
+        logger.info(f"持仓成本: {total_buy - total_sell:.2f}元")
 
 
 def cmd_list(args):
     """列出交易记录"""
     trades = load_trades()
     if not trades:
-        print("📭 暂无交易记录")
+        logger.info("📭 暂无交易记录")
         return
     
-    print("=" * 50)
-    print("📋 交易记录")
-    print("=" * 50)
+    logger.info("=" * 50)
+    logger.info("📋 交易记录")
+    logger.info("=" * 50)
     for i, t in enumerate(trades[-10:], 1):
         code = t.get("code") or t.get("stock_code", "")
         action = t.get("action") or t.get("direction", "")
@@ -158,7 +159,7 @@ def cmd_list(args):
         qty = t.get("quantity", 0)
         date = t.get("date", "")
         reason = t.get("reason", "")
-        print(f"{i}. {date} | {code} | {action} {qty}股 @{price} | {reason}")
+        logger.info(f"{i}. {date} | {code} | {action} {qty}股 @{price} | {reason}")
 
 
 def cli() -> None:
@@ -224,9 +225,9 @@ def cli() -> None:
     trace = not args.no_trace
 
     if args.eval:
-        print("=" * 50)
-        print("📊 策略回测评估")
-        print("=" * 50)
+        logger.info("=" * 50)
+        logger.info("📊 策略回测评估")
+        logger.info("=" * 50)
         strategies = [
             Strategy("默认策略", tiers=[(10, 0.20), (15, 0.20), (20, 0.20), (30, 0.40)], stop_loss=-5),
             Strategy("激进策略", tiers=[(8, 0.25), (15, 0.25), (25, 0.50)], stop_loss=-7),
@@ -235,7 +236,7 @@ def cli() -> None:
         stocks = ["600519", "000858", "300750"]
         results = []
         for strat in strategies:
-            print(f"\n🔄 测试策略: {strat.name}")
+            logger.info(f"\n🔄 测试策略: {strat.name}")
             result = quick_backtest(
                 stocks=stocks,
                 strategy=strat,
@@ -246,38 +247,38 @@ def cli() -> None:
             )
             results.append((strat.name, result))
 
-        print("\n" + "=" * 50)
-        print("📈 策略对比")
-        print("=" * 50)
+        logger.info("\n" + "=" * 50)
+        logger.info("📈 策略对比")
+        logger.info("=" * 50)
         for name, res in results:
-            print(f"\n【{name}】")
+            logger.info(f"\n【{name}】")
             if "error" in res:
-                print(f"  ❌ {res['error']}")
+                logger.info(f"  ❌ {res['error']}")
             else:
-                print(f"  收益: {res.get('total_return', 'N/A')}")
-                print(f"  胜率: {res.get('win_rate', 'N/A')}")
-                print(f"  盈亏比: {res.get('profit_ratio', 'N/A')}")
-                print(f"  最大回撤: {res.get('max_drawdown', 'N/A')}")
+                logger.info(f"  收益: {res.get('total_return', 'N/A')}")
+                logger.info(f"  胜率: {res.get('win_rate', 'N/A')}")
+                logger.info(f"  盈亏比: {res.get('profit_ratio', 'N/A')}")
+                logger.info(f"  最大回撤: {res.get('max_drawdown', 'N/A')}")
         return
 
     if args.hot:
-        print("=" * 50)
-        print("🔥 热点板块")
-        print("=" * 50)
+        logger.info("=" * 50)
+        logger.info("🔥 热点板块")
+        logger.info("=" * 50)
         agent = StockAgent(verbose=verbose, trace=trace)
-        print(agent.analyze("大盘", "有哪些热点板块？"))
+        logger.info(agent.analyze("大盘", "有哪些热点板块？"))
         return
 
     if args.reco:
-        print("=" * 50)
-        print("🎯 智能选股（4层过滤 + LLM分析）")
-        print("=" * 50)
+        logger.info("=" * 50)
+        logger.info("🎯 智能选股（4层过滤 + LLM分析）")
+        logger.info("=" * 50)
         
         # 使用新的selector选股
         from money_get.selector import select_stocks
         
         # 先规则过滤
-        print("\n📋 规则过滤选股...")
+        logger.info("\n📋 规则过滤选股...")
         stocks = select_stocks(
             use_policy=True,
             use_llm=False,
@@ -285,15 +286,15 @@ def cli() -> None:
         )
         
         if not stocks:
-            print("无符合条件股票")
+            logger.info("无符合条件股票")
             return
         
-        print(f"\n规则筛选出 {len(stocks)} 只候选股")
+        logger.info(f"\n规则筛选出 {len(stocks)} 只候选股")
         
         # 如果开启LLM分析
         use_llm = True
         if use_llm:
-            print("\n🤖 LLM深度分析...")
+            logger.info("\n🤖 LLM深度分析...")
             stocks = select_stocks(
                 use_policy=True,
                 use_llm=True,
@@ -301,9 +302,9 @@ def cli() -> None:
             )
         
         # 打印结果
-        print("\n" + "=" * 50)
-        print("📊 推荐结果")
-        print("=" * 50)
+        logger.info("\n" + "=" * 50)
+        logger.info("📊 推荐结果")
+        logger.info("=" * 50)
         
         for idx, s in enumerate(stocks, 1):
             code = s.get('code', '')
@@ -312,40 +313,40 @@ def cli() -> None:
             inflow = s.get('inflow', {}).get('consecutive_days', 0)
             patterns = s.get('technique', {}).get('patterns', [])[:2]
             
-            print(f"\n{idx}. {code} {name}")
-            print(f"   推荐: {llm_rec} | 资金流入: {inflow}天 | 技术: {patterns}")
+            logger.info(f"\n{idx}. {code} {name}")
+            logger.info(f"   推荐: {llm_rec} | 资金流入: {inflow}天 | 技术: {patterns}")
         
         return
 
     if args.backtest:
         if not args.stock:
-            print("❌ 回测需要指定股票代码")
-            print("   money-get 600519 --backtest")
+            logger.info("❌ 回测需要指定股票代码")
+            logger.info("   money-get 600519 --backtest")
             return
-        print("=" * 50)
-        print(f"📈 回测: {args.stock}")
-        print(f"📅 周数: {args.weeks}")
-        print("=" * 50)
+        logger.info("=" * 50)
+        logger.info(f"📈 回测: {args.stock}")
+        logger.info(f"📅 周数: {args.weeks}")
+        logger.info("=" * 50)
         agent = StockAgent(backtest_date="2025-01-01", initial_capital=10000, verbose=verbose, trace=trace)
         result = agent.run_backtest([args.stock], weeks=args.weeks)
-        print("\n" + "=" * 50)
-        print("📊 回测结果")
-        print("=" * 50)
-        print(f"初始资金: {result['initial_capital']}元")
-        print(f"当前资金: {result['current_capital']:.2f}元")
-        print(f"总收益: {result['total_return']:.2f}%")
+        logger.info("\n" + "=" * 50)
+        logger.info("📊 回测结果")
+        logger.info("=" * 50)
+        logger.info(f"初始资金: {result['initial_capital']}元")
+        logger.info(f"当前资金: {result['current_capital']:.2f}元")
+        logger.info(f"总收益: {result['total_return']:.2f}%")
         ev = result.get("evaluation", {})
         if ev and "error" not in ev:
-            print(f"交易次数: {ev.get('total_trades', 0)}")
-            print(f"胜率: {ev.get('win_rate', 'N/A')}")
-            print(f"盈利: {ev.get('wins', 0)}次")
-            print(f"亏损: {ev.get('losses', 0)}次")
+            logger.info(f"交易次数: {ev.get('total_trades', 0)}")
+            logger.info(f"胜率: {ev.get('win_rate', 'N/A')}")
+            logger.info(f"盈利: {ev.get('wins', 0)}次")
+            logger.info(f"亏损: {ev.get('losses', 0)}次")
         return
 
     if args.stock:
-        print("=" * 50)
-        print(f"📊 分析: {args.stock}")
-        print("=" * 50)
+        logger.info("=" * 50)
+        logger.info(f"📊 分析: {args.stock}")
+        logger.info("=" * 50)
         
         # 使用多 Agent 协作系统
         from .agents import TradingAgents
@@ -358,15 +359,15 @@ def cli() -> None:
         
         # 打印最终决策
         decision = result.get('decision', '无决策')
-        print("\n" + "="*50)
-        print("📋 分析结果")
-        print("="*50)
-        print(decision)
+        logger.info("\n" + "="*50)
+        logger.info("📋 分析结果")
+        logger.info("="*50)
+        logger.info(decision)
         
         _logger.info(f"多Agent分析完成: {args.stock}")
         return
 
-    print(
+    logger.info(
         """
 📈 股票分析 CLI
 ================
@@ -385,5 +386,5 @@ def cli() -> None:
     stock = input("> ").strip()
     if stock:
         agent = StockAgent(verbose=verbose, trace=trace)
-        print("\n" + "=" * 50)
-        print(agent.analyze(stock))
+        logger.info("\n" + "=" * 50)
+        logger.info(agent.analyze(stock))

@@ -1,9 +1,12 @@
 """回测系统 - 时间隔离的数据查询"""
+import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 from money_get.core.db import get_connection
 from money_get.core.scraper import get_stock_price, get_fund_flow, get_realtime_news
 import json
+
+logger = logging.getLogger(__name__)
 
 
 class TimeMachine:
@@ -339,15 +342,15 @@ def run_backtest(code: str, dates: List[str]) -> dict:
 # ============ 示例 ============
 if __name__ == "__main__":
     # 测试时光机
-    print("=== 测试时光机 ===")
+    logger.info("=== 测试时光机 ===")
     tm = TimeMachine("2025-06-01")
     
-    print(f"回测日期: 2025-06-01")
-    print(f"查询范围: {tm._get_date_range()}")
+    logger.info(f"回测日期: 2025-06-01")
+    logger.info(f"查询范围: {tm._get_date_range()}")
     
     # 获取数据
     klines = tm.get_kline('600519')
-    print(f"\nK线数据: {len(klines)}条")
+    logger.info(f"\nK线数据: {len(klines)}条")
     if klines:
-        print(f"  首条: {klines[0]}")
-        print(f"  末条: {klines[-1]}")
+        logger.info(f"  首条: {klines[0]}")
+        logger.info(f"  末条: {klines[-1]}")

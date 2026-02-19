@@ -1,4 +1,5 @@
 """资金分析 Agent - LangGraph 版本"""
+import logging
 from langchain_core.tools import tool
 from langchain.agents import create_agent
 from money_get.agents.langgraph_base import (
@@ -6,6 +7,8 @@ from money_get.agents.langgraph_base import (
 )
 from money_get.db import get_fund_flow_data, get_kline, get_stock, get_realtime_price
 from money_get.logger import logger as _logger
+
+logger = logging.getLogger(__name__)
 
 
 # ============ 工具定义 ============
@@ -123,4 +126,4 @@ def analyze_fund(stock_code: str) -> str:
 if __name__ == "__main__":
     # 测试
     result = analyze_fund("300719")
-    print(result)
+    logger.info(result)

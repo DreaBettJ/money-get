@@ -1,8 +1,11 @@
 """自动选股系统 - 每日精选"""
+import logging
 from money_get.enhanced_factors import batch_analyze, quick_analyze
 from money_get.core.scraper import get_hot_sectors
 from money_get.core.db import get_connection
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 
 # 候选股票池（可配置）
@@ -39,31 +42,31 @@ def daily_selection(pool: list = None) -> list:
     if pool is None:
         pool = get_pool_from_hot()
     
-    print(f"\n{'='*60}")
-    print(f"📊 每日选股分析 - {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    print(f"{'='*60}")
-    print(f"候选股票: {len(pool)} 只\n")
+    logger.info(f"\n{'='*60}")
+    logger.info(f"📊 每日选股分析 - {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    logger.info(f"{'='*60}")
+    logger.info(f"候选股票: {len(pool)} 只\n")
     
     # 批量分析
     results = batch_analyze(pool)
     
     # 输出结果
-    print(f"{'排名':<4} {'代码':<8} {'名称':<10} {'现价':<8} {'涨幅':<8} {'总分':<6} {'信号'}")
-    print("-" * 70)
+    logger.info(f"{'排名':<4} {'代码':<8} {'名称':<10} {'现价':<8} {'涨幅':<8} {'总分':<6} {'信号'}")
+    logger.info("-" * 70)
     
     for i, r in enumerate(results, 1):
         change = r.get('change', 0)
         change_str = f"{change:+.2f}%" if change else "N/A"
         
-        print(f"{i:<4} {r['code']:<8} {r['name']:<10} {r['price']:<8.2f} {change_str:<8} {r['total_score']:<6.1f} {r['signal']}")
+        logger.info(f"{i:<4} {r['code']:<8} {r['name']:<10} {r['price']:<8.2f} {change_str:<8} {r['total_score']:<6.1f} {r['signal']}")
     
-    print("-" * 70)
+    logger.info("-" * 70)
     
     # 推荐
     top3 = results[:3]
-    print(f"\n🎯 推荐关注:")
+    logger.info(f"\n🎯 推荐关注:")
     for r in top3:
-        print(f"  - {r['code']} {r['name']}: {r['signal']} (分数: {r['total_score']})")
+        logger.info(f"  - {r['code']} {r['name']}: {r['signal']} (分数: {r['total_score']})")
     
     return results
 
@@ -101,7 +104,7 @@ def save_daily_report(results: list):
     
     conn.commit()
     conn.close()
-    print(f"\n✅ 报告已保存")
+    logger.info(f"\n✅ 报告已保存")
 
 
 if __name__ == "__main__":

@@ -5,6 +5,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 from datetime import datetime
 
+logger = logging.getLogger(__name__)
+
 # 直接创建logger，避免多线程问题
 _logger = logging.getLogger('money_get.full_scan')
 if not _logger.handlers:
@@ -193,7 +195,7 @@ def run_full_scan(count: int = 500):
     
     # 输出报告
     report = format_report(results)
-    print(report)
+    logger.info(report)
     
     # 记录日志
     top5 = [(r['code'], r['name'], f"{r['change']:+.2f}%") for r in results[:5]]

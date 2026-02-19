@@ -2,9 +2,12 @@
 
 使用 OpenClaw 的 message 工具推送分析结果
 """
+import logging
 from typing import Dict, Any, Optional
 import json
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 def get_config() -> dict:
@@ -106,4 +109,4 @@ def push_daily_summary(data: Dict, user_id: str = None) -> Dict[str, Any]:
 if __name__ == "__main__":
     # 测试发送
     result = push_to_user("🧪 money-get 推送测试成功！")
-    print(result)
+    logger.info(result)

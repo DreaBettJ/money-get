@@ -6,9 +6,12 @@
 3. 基本面因子 - PE、ROE、营收增长
 4. 市场情绪 - 龙虎榜、热点板块
 """
+import logging
 from typing import Dict, List, Optional
 from money_get.core.db import get_connection, get_stock, get_kline
 from money_get.core.scraper import get_stock_price, get_fund_flow, get_hot_sectors
+
+logger = logging.getLogger(__name__)
 
 
 class FactorScore:
@@ -235,7 +238,7 @@ def rank_stocks(codes: List[str]) -> List[Dict]:
             result = analyze_stock(code)
             results.append(result)
         except Exception as e:
-            print(f"分析 {code} 失败: {e}")
+            logger.info(f"分析 {code} 失败: {e}")
     
     # 按总分排序
     results.sort(key=lambda x: x['total_score'], reverse=True)
@@ -246,11 +249,11 @@ def rank_stocks(codes: List[str]) -> List[Dict]:
 if __name__ == "__main__":
     # 测试
     result = analyze_stock("300719")
-    print("=== 多因子分析结果 ===")
-    print(f"股票: {result['name']} ({result['code']})")
-    print(f"现价: {result['price']}")
-    print(f"\n因子得分:")
+    logger.info("=== 多因子分析结果 ===")
+    logger.info(f"股票: {result['name']} ({result['code']})")
+    logger.info(f"现价: {result['price']}")
+    logger.info(f"\n因子得分:")
     for factor, score in result['scores'].items():
-        print(f"  {factor}: {score}")
-    print(f"\n总分: {result['total_score']}")
-    print(f"信号: {result['signal']}")
+        logger.info(f"  {factor}: {score}")
+    logger.info(f"\n总分: {result['total_score']}")
+    logger.info(f"信号: {result['signal']}")

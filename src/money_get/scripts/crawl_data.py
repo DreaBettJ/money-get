@@ -1,8 +1,11 @@
 """数据爬取脚本 - 完整版"""
+import logging
 import requests
 import json
 import time
 from money_get.db import get_connection
+
+logger = logging.getLogger(__name__)
 
 
 # ============ 北向资金 ============
@@ -49,7 +52,7 @@ def get_north_money() -> list:
                 })
         
     except Exception as e:
-        print(f"获取北向资金失败: {e}")
+        logger.info(f"获取北向资金失败: {e}")
     
     return results
 
@@ -91,7 +94,7 @@ def save_north_money(data_list: list):
     
     conn.commit()
     conn.close()
-    print(f"北向资金持股: {len(data_list)}条")
+    logger.info(f"北向资金持股: {len(data_list)}条")
 
 
 # ============ 股票行情 ============
@@ -186,17 +189,17 @@ def save_stock_quote(data: dict):
 # ============ 主程序 ============
 def crawl_market():
     """爬取市场数据"""
-    print("="*50)
-    print("开始爬取市场数据")
-    print("="*50)
+    logger.info("="*50)
+    logger.info("开始爬取市场数据")
+    logger.info("="*50)
     
     # 1. 北向资金
-    print("\n[1/2] 北向资金持股...")
+    logger.info("\n[1/2] 北向资金持股...")
     north_data = get_north_money()
     save_north_money(north_data)
     
     # 2. 热门股票
-    print("\n[2/2] 热门股票...")
+    logger.info("\n[2/2] 热门股票...")
     hot_codes = [
         '600519', '000858', '600036', '601318', '600900', '600276', '601166', '601398',
         '600028', '601988', '601857', '600050', '601288', '600016', '601088', '600030',
@@ -215,11 +218,11 @@ def crawl_market():
             success += 1
         
         if i % 20 == 0:
-            print(f"  进度: {i}/{len(hot_codes)}")
+            logger.info(f"  进度: {i}/{len(hot_codes)}")
         time.sleep(0.03)
     
-    print(f"行情数据: {success}条")
-    print("\n爬取完成!")
+    logger.info(f"行情数据: {success}条")
+    logger.info("\n爬取完成!")
 
 
 if __name__ == "__main__":

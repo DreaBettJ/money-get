@@ -272,20 +272,20 @@ def main():
     elif args.mode == "full":
         # 完整同步
         result = sync_all(days=args.days)
-        print(f"\n📊 完整同步: 成功 {result['success']}/{result['total']}")
+        logger.info(f"\n📊 完整同步: 成功 {result['success']}/{result['total']}")
     elif args.all:
         result = sync_all(days=args.days)
-        print(f"\n📊 同步结果: 成功 {result['success']}/{result['total']}")
+        logger.info(f"\n📊 同步结果: 成功 {result['success']}/{result['total']}")
     elif args.stock_code:
         result = sync_single_stock(args.stock_code, days=args.days)
         if result.get("success"):
-            print(f"\n✅ {args.stock_code} 同步完成")
+            logger.info(f"\n✅ {args.stock_code} 同步完成")
         else:
-            print(f"\n❌ {args.stock_code} 同步失败: {result.get('error')}")
+            logger.info(f"\n❌ {args.stock_code} 同步失败: {result.get('error')}")
     else:
         # 默认同步所有
         result = sync_all(days=args.days)
-        print(f"\n📊 同步结果: 成功 {result['success']}/{result['total']}")
+        logger.info(f"\n📊 同步结果: 成功 {result['success']}/{result['total']}")
 
 
 if __name__ == "__main__":

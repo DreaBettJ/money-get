@@ -1,10 +1,13 @@
 """情绪分析 Agent - LangGraph 版本"""
+import logging
 from langchain_core.tools import tool
 from langchain.agents import create_agent
 from money_get.agents.langgraph_base import LangGraphAgent
 from money_get.scraper import get_hot_sectors
 from money_get.db import get_stock
 from money_get.logger import logger as _logger
+
+logger = logging.getLogger(__name__)
 
 
 # ============ 工具定义 ============
@@ -108,4 +111,4 @@ def analyze_sentiment(stock_code: str) -> str:
 
 if __name__ == "__main__":
     result = analyze_sentiment("600519")
-    print(result)
+    logger.info(result)

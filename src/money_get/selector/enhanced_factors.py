@@ -1,7 +1,10 @@
 """增强因子系统 - 包含基本面因子"""
+import logging
 from typing import Dict, List
 from money_get.core.db import get_connection, get_stock, get_kline
 from money_get.core.scraper import get_stock_price, get_fund_flow, get_hot_sectors
+
+logger = logging.getLogger(__name__)
 
 
 class EnhancedFactor:
@@ -301,7 +304,7 @@ def batch_analyze(codes: List[str]) -> List[Dict]:
             result = quick_analyze(code)
             results.append(result)
         except Exception as e:
-            print(f"分析 {code} 失败: {e}")
+            logger.info(f"分析 {code} 失败: {e}")
     
     # 按总分排序
     results.sort(key=lambda x: x['total_score'], reverse=True)
@@ -311,13 +314,13 @@ def batch_analyze(codes: List[str]) -> List[Dict]:
 if __name__ == "__main__":
     # 测试
     result = quick_analyze("300719")
-    print(f"\n{'='*50}")
-    print(f"股票: {result['name']} ({result['code']})")
-    print(f"价格: {result['price']} ({result['change']:.2f}%)")
-    print(f"{'='*50}")
-    print("\n因子得分:")
+    logger.info(f"\n{'='*50}")
+    logger.info(f"股票: {result['name']} ({result['code']})")
+    logger.info(f"价格: {result['price']} ({result['change']:.2f}%)")
+    logger.info(f"{'='*50}")
+    logger.info("\n因子得分:")
     for k, v in result['scores'].items():
         bar = "█" * int(v/10)
-        print(f"  {k:20s}: {v:5.1f} {bar}")
-    print(f"\n总分: {result['total_score']}")
-    print(f"信号: {result['signal']}")
+        logger.info(f"  {k:20s}: {v:5.1f} {bar}")
+    logger.info(f"\n总分: {result['total_score']}")
+    logger.info(f"信号: {result['signal']}")

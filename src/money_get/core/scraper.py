@@ -2,6 +2,7 @@
 
 注意：东方财富有频率限制，需要控制请求频率
 """
+import logging
 from typing import List, Dict, Optional
 import json
 import re
@@ -9,6 +10,8 @@ import time
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
+logger = logging.getLogger(__name__)
 
 # Playwright 是可选依赖
 try:
@@ -287,20 +290,20 @@ def get_stock_detail_playwright(code: str) -> Optional[Dict]:
 
 
 if __name__ == "__main__":
-    print("=== 测试数据爬取 ===")
+    logger.info("=== 测试数据爬取 ===")
     
-    print("\n1. 股票价格:")
+    logger.info("\n1. 股票价格:")
     price = get_stock_price("600519")
     _logger.warning(f"   {price}")
     
-    print("\n2. 资金流向:")
+    logger.info("\n2. 资金流向:")
     flow = get_fund_flow("600519", days=5)
     for f in flow[:3]:
         _logger.warning(f"   {f}")
     
-    print("\n3. 热点板块:")
+    logger.info("\n3. 热点板块:")
     sectors = get_hot_sectors(5)
     for s in sectors:
         _logger.warning(f"   {s}")
     
-    print("\n=== 完成 ===")
+    logger.info("\n=== 完成 ===")

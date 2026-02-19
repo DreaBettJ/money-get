@@ -5,10 +5,13 @@
     python test_sync.py --sync      # 仅同步
     python test_sync.py --analyze   # 仅分析
 """
+import logging
 import argparse
 import sys
 import os
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # 项目根目录
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -18,25 +21,25 @@ os.chdir(PROJECT_ROOT)
 
 def test_sync():
     """测试数据同步"""
-    print("=" * 50)
-    print("📊 数据同步测试")
-    print("=" * 50)
+    logger.info("=" * 50)
+    logger.info("📊 数据同步测试")
+    logger.info("=" * 50)
     
     from money_get.scripts.sync_daily import sync_all
     from money_get.db import init_db
     
     # 初始化数据库
-    print("\n1️⃣ 初始化数据库...")
+    logger.info("\n1️⃣ 初始化数据库...")
     init_db()
-    print("   ✅ 完成")
+    logger.info("   ✅ 完成")
     
     # 同步数据
-    print("\n2️⃣ 同步数据...")
+    logger.info("\n2️⃣ 同步数据...")
     result = sync_all(days=30)
-    print(f"   ✅ 同步完成: 成功 {result['success']}/{result['total']}")
+    logger.info(f"   ✅ 同步完成: 成功 {result['success']}/{result['total']}")
     
     # 检查数据
-    print("\n3️⃣ 检查数据...")
+    logger.info("\n3️⃣ 检查数据...")
     import sqlite3
     db_path = PROJECT_ROOT / "data" / "db" / "money_get.db"
     conn = sqlite3.connect(str(db_path))
@@ -54,44 +57,44 @@ def test_sync():
     for table, name in tables:
         cursor.execute(f"SELECT COUNT(*) FROM {table}")
         count = cursor.fetchone()[0]
-        print(f"   {name}: {count} 条")
+        logger.info(f"   {name}: {count} 条")
     
     conn.close()
-    print("\n✅ 数据同步测试完成!")
+    logger.info("\n✅ 数据同步测试完成!")
 
 
 def test_analyze():
     """测试分析功能"""
-    print("=" * 50)
-    print("🤖 LLM 分析测试")
-    print("=" * 50)
+    logger.info("=" * 50)
+    logger.info("🤖 LLM 分析测试")
+    logger.info("=" * 50)
     
     from money_get.services.llm_analyzer import analyze_stock, analyze_market
     
     # 分析个股
-    print("\n1️⃣ 分析贵州茅台 (600519)...")
+    logger.info("\n1️⃣ 分析贵州茅台 (600519)...")
     result = analyze_stock("600519")
     
     if "error" in result:
-        print(f"   ❌ 错误: {result['error']}")
+        logger.info(f"   ❌ 错误: {result['error']}")
     else:
-        print("\n" + "=" * 50)
-        print(result["analysis"])
-        print("=" * 50)
+        logger.info("\n" + "=" * 50)
+        logger.info(result["analysis"])
+        logger.info("=" * 50)
     
     # 分析市场
-    print("\n2️⃣ 分析整体市场...")
+    logger.info("\n2️⃣ 分析整体市场...")
     result = analyze_market()
-    print("\n" + "=" * 50)
-    print(result)
-    print("=" * 50)
+    logger.info("\n" + "=" * 50)
+    logger.info(result)
+    logger.info("=" * 50)
 
 
 def test_query():
     """测试数据查询"""
-    print("=" * 50)
-    print("🔍 数据查询测试")
-    print("=" * 50)
+    logger.info("=" * 50)
+    logger.info("🔍 数据查询测试")
+    logger.info("=" * 50)
     
     from money_get.db import (
         get_kline, get_indicators, get_fund_flow_data,
@@ -99,44 +102,44 @@ def test_query():
     )
     
     # K线
-    print("\n1️⃣ K线数据 (茅台):")
+    logger.info("\n1️⃣ K线数据 (茅台):")
     klines = get_kline("600519", limit=3)
     for k in klines:
-        print(f"   {k['date']}: 收盘 {k['close']}")
+        logger.info(f"   {k['date']}: 收盘 {k['close']}")
     
     # 指标
-    print("\n2️⃣ 技术指标:")
+    logger.info("\n2️⃣ 技术指标:")
     ind = get_indicators("600519")
     if ind:
-        print(f"   MA5: {ind.get('ma5', 0):.2f}")
-        print(f"   MA20: {ind.get('ma20', 0):.2f}")
-        print(f"   MACD: {ind.get('macd', 0):.2f}")
+        logger.info(f"   MA5: {ind.get('ma5', 0):.2f}")
+        logger.info(f"   MA20: {ind.get('ma20', 0):.2f}")
+        logger.info(f"   MACD: {ind.get('macd', 0):.2f}")
     
     # 资金流向
-    print("\n3️⃣ 资金流向:")
+    logger.info("\n3️⃣ 资金流向:")
     ff = get_fund_flow_data("600519", limit=1)
     if ff:
-        print(f"   主力净流入: {ff[0].get('main_net_inflow', 0)}")
+        logger.info(f"   主力净流入: {ff[0].get('main_net_inflow', 0)}")
     
     # 新闻
-    print("\n4️⃣ 最新新闻:")
+    logger.info("\n4️⃣ 最新新闻:")
     news = get_news("600519", limit=3)
     for n in news:
-        print(f"   - {n.get('title', '')[:30]}...")
+        logger.info(f"   - {n.get('title', '')[:30]}...")
     
     # 龙虎榜
-    print("\n5️⃣ 龙虎榜:")
+    logger.info("\n5️⃣ 龙虎榜:")
     lhb = get_lhb_data(limit=5)
     for l in lhb:
-        print(f"   - {l.get('name')}: 净买入 {l.get('net_amount')}")
+        logger.info(f"   - {l.get('name')}: 净买入 {l.get('net_amount')}")
     
     # 热点板块
-    print("\n6️⃣ 热点板块:")
+    logger.info("\n6️⃣ 热点板块:")
     sectors = get_hot_sectors(limit=5)
     for s in sectors:
-        print(f"   - {s.get('sector_name')}: {s.get('change_percent')}%")
+        logger.info(f"   - {s.get('sector_name')}: {s.get('change_percent')}%")
     
-    print("\n✅ 查询测试完成!")
+    logger.info("\n✅ 查询测试完成!")
 
 
 def main():

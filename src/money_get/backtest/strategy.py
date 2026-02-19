@@ -6,9 +6,12 @@
 3. 止损
 4. 多维度评估
 """
+import logging
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 import json
+
+logger = logging.getLogger(__name__)
 
 
 class Strategy:
@@ -112,7 +115,7 @@ class BacktestEngine:
         })
         
         if self.verbose:
-            print(f"  ✅ 买入 {stock} @ {price} x {shares}")
+            logger.info(f"  ✅ 买入 {stock} @ {price} x {shares}")
         
         return True
     
@@ -149,7 +152,7 @@ class BacktestEngine:
             del self.peak_price[stock]
         
         if self.verbose:
-            print(f"  ❌ 卖出 {stock} @ {price} x {shares}")
+            logger.info(f"  ❌ 卖出 {stock} @ {price} x {shares}")
         
         return True
     
@@ -290,33 +293,33 @@ class BacktestEngine:
         """打印评估结果"""
         ev = self.evaluate()
         
-        print("\n" + "="*50)
-        print("📊 回测评估")
-        print("="*50)
+        logger.info("\n" + "="*50)
+        logger.info("📊 回测评估")
+        logger.info("="*50)
         
         if "error" in ev:
-            print(f"❌ {ev['error']}")
+            logger.info(f"❌ {ev['error']}")
             return
         
-        print(f"💰 初始资金: {ev['initial_capital']}元")
-        print(f"📈 最终市值: {ev['final_value']:.2f}元")
-        print(f"📊 总收益: {ev['total_return']}")
+        logger.info(f"💰 初始资金: {ev['initial_capital']}元")
+        logger.info(f"📈 最终市值: {ev['final_value']:.2f}元")
+        logger.info(f"📊 总收益: {ev['total_return']}")
         
-        print(f"\n📈 交易统计")
-        print(f"  - 总交易: {ev['total_trades']}次")
-        print(f"  - 盈利: {ev['wins']}次")
-        print(f"  - 亏损: {ev['losses']}次")
-        print(f"  - 胜率: {ev['win_rate']}")
+        logger.info(f"\n📈 交易统计")
+        logger.info(f"  - 总交易: {ev['total_trades']}次")
+        logger.info(f"  - 盈利: {ev['wins']}次")
+        logger.info(f"  - 亏损: {ev['losses']}次")
+        logger.info(f"  - 胜率: {ev['win_rate']}")
         
-        print(f"\n💹 盈亏")
-        print(f"  - 盈亏比: {ev['profit_ratio']}")
-        print(f"  - 平均盈利: {ev['avg_win']}元")
-        print(f"  - 平均亏损: {ev['avg_loss']}元")
-        print(f"  - 最大回撤: {ev['max_drawdown']}")
+        logger.info(f"\n💹 盈亏")
+        logger.info(f"  - 盈亏比: {ev['profit_ratio']}")
+        logger.info(f"  - 平均盈利: {ev['avg_win']}元")
+        logger.info(f"  - 平均亏损: {ev['avg_loss']}元")
+        logger.info(f"  - 最大回撤: {ev['max_drawdown']}")
         
-        print(f"\n🔔 信号触发: {ev['signals_triggered']}次")
+        logger.info(f"\n🔔 信号触发: {ev['signals_triggered']}次")
         
-        print("="*50)
+        logger.info("="*50)
 
 
 def quick_backtest(

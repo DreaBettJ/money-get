@@ -156,7 +156,7 @@ def run_full_scan(count: int = 5000):
     
     # 输出报告
     report = format_full_report(results)
-    print(report)
+    logger.info(report)
     
     # 记录结果
     top5 = [(r['code'], r['name'], f"{r['change']:+.2f}%") for r in results[:5]]
