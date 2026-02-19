@@ -12,7 +12,7 @@ from typing import List, Dict, Optional
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import tool
 
-from .logger import log_analysis, logger as _logger
+from .core.logger import log_analysis, logger as _logger
 
 logger = logging.getLogger(__name__)
 
@@ -268,19 +268,24 @@ class StockAgent:
                 query: 搜索关键词
             """
             try:
-                # 优先使用 MCP MiniMax
-                from mcporter import call_minimax_web_search
-                result = call_minimax_web_search(query=query)
+                # 使用 MCP MiniMax (mcporter)
+                import subprocess
+                import json
                 
-                if result and 'data' in result:
-                    items = result['data'][:5]
-                    response = f"## 搜索结果: {query}\n\n"
-                    for item in items:
-                        title = item.get('title', '')
-                        snippet = item.get('snippet', '')[:100]
-                        url = item.get('url', '')
-                        response += f"- {title}\n  {snippet}...\n  来源: {url}\n\n"
-                    return response
+                cmd = ['mcporter', 'call', 'minimax.web_search', f'query={query}']
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+                
+                if result.returncode == 0:
+                    data = json.loads(result.stdout)
+                    if 'organic' in data:
+                        items = data['organic'][:5]
+                        response = f"## 搜索结果: {query}\n\n"
+                        for item in items:
+                            title = item.get('title', '')
+                            snippet = item.get('snippet', '')[:100]
+                            url = item.get('link', '')
+                            response += f"- {title}\n  {snippet}...\n  来源: {url}\n\n"
+                        return response
             except Exception as exc:
                 logger.debug("MiniMax MCP search unavailable: %s", exc)
             
@@ -626,7 +631,7 @@ class StockAgent:
         """
         from money_get.llm import get_llm
         from money_get.memory import get_principles, get_patterns
-        from .logger import logger as _logger
+        from .core.logger import logger as _logger
         
         # 记录开始分析
         _logger.info(f"========== 开始分析股票: {stock_code} ==========")
