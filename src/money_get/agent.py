@@ -271,9 +271,16 @@ class StockAgent:
                 # 使用 MCP MiniMax (mcporter)
                 import subprocess
                 import json
+                import os
+                
+                # mcporter 需要在配置目录运行
+                workspace_dir = os.path.expanduser('~/.openclaw/workspace')
                 
                 cmd = ['mcporter', 'call', 'minimax.web_search', f'query={query}']
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+                result = subprocess.run(
+                    cmd, capture_output=True, text=True, timeout=30, 
+                    cwd=workspace_dir, env={**os.environ, 'PATH': '/home/lijiang/.npm-global/bin:' + os.environ.get('PATH', '')}
+                )
                 
                 if result.returncode == 0:
                     data = json.loads(result.stdout)
