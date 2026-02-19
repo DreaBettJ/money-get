@@ -6,9 +6,18 @@
 """
 import re
 import time
+import logging
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 from enum import Enum
+
+# 创建logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    logger.addHandler(handler)
 
 # Playwright 是可选依赖
 try:
@@ -157,7 +166,7 @@ def fetch_with_playwright(url: str, timeout: int = 30000) -> Optional[str]:
             content = page.content()
             return content
         except Exception as e:
-            print(f"获取页面失败: {url}, {e}")
+            logger.info(f"获取页面失败: {url}, {e}")
             return None
         finally:
             browser.close()
@@ -174,14 +183,14 @@ def get_gov_policy_keywords() -> List[Dict]:
     keywords = []
     
     # 1. 中国政府网 - 政策文件
-    print("获取中国政府网政策...")
+    logger.info("获取中国政府网政策...")
     content = fetch_with_playwright("https://www.gov.cn/zhengce/zuixin.htm")
     if content:
         policies = _extract_policy_info(content, "中国政府网")
         keywords.extend(policies)
     
     # 2. 央广网 - 政策解读
-    print("获取央广网政策...")
+    logger.info("获取央广网政策...")
     content = fetch_with_playwright("https://news.cnr.cn/")
     if content:
         policies = _extract_policy_info(content, "央广网")
@@ -347,39 +356,39 @@ def get_priority_policies(limit: int = 5) -> List[Dict]:
 
 # 测试
 if __name__ == "__main__":
-    print("=== 政策关键词提取 V2 ===\n")
+    logger.info("=== 政策关键词提取 V2 ===\n")
     
     policies = get_gov_policy_keywords()
     
-    print(f"获取到 {len(policies)} 条政策\n")
+    logger.info(f"获取到 {len(policies)} 条政策\n")
     
     # 打印高优先级政策
-    print("=== 高优先级政策（新政策+国家级）===\n")
+    logger.info("=== 高优先级政策（新政策+国家级）===\n")
     priority = get_priority_policies(5)
     for i, p in enumerate(priority, 1):
         sectors = p.get('sectors', [])
         s = f" [{', '.join(sectors)}]" if sectors else ""
-        print(f"{i}. [{p['level']}][{p['timeliness']}] {p['title'][:40]}{s}")
+        logger.info(f"{i}. [{p['level']}][{p['timeliness']}] {p['title'][:40]}{s}")
     
     # 按级别统计
-    print("\n=== 政策级别统计 ===")
+    logger.info("\n=== 政策级别统计 ===")
     levels = {}
     for p in policies:
         l = p.get('level', '未知')
         levels[l] = levels.get(l, 0) + 1
     for l, count in levels.items():
-        print(f"  {l}: {count}条")
+        logger.info(f"  {l}: {count}条")
     
     # 按时效统计
-    print("\n=== 政策时效统计 ===")
+    logger.info("\n=== 政策时效统计 ===")
     times = {}
     for p in policies:
         t = p.get('timeliness', '未知')
         times[t] = times.get(t, 0) + 1
     for t, count in times.items():
-        print(f"  {t}: {count}条")
+        logger.info(f"  {t}: {count}条")
     
     # 提取领域
-    print("\n=== 政策关注领域 ===")
+    logger.info("\n=== 政策关注领域 ===")
     sectors = get_focus_sectors()
-    print(f"  {', '.join(sectors)}")
+    logger.info(f"  {', '.join(sectors)}")
