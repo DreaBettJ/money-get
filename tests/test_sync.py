@@ -10,9 +10,11 @@ import sys
 import os
 from pathlib import Path
 
-# 项目根目录
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
+# 项目根目录 - 动态计算
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
+
+# 切换到项目目录
 os.chdir(PROJECT_ROOT)
 
 
@@ -66,22 +68,12 @@ def test_analyze():
     print("🤖 LLM 分析测试")
     print("=" * 50)
     
-    from money_get.services.llm_analyzer import analyze_stock, analyze_market
+    from money_get.services.llm_analyzer import analyze_stock
     
     # 分析个股
     print("\n1️⃣ 分析贵州茅台 (600519)...")
     result = analyze_stock("600519")
     
-    if "error" in result:
-        print(f"   ❌ 错误: {result['error']}")
-    else:
-        print("\n" + "=" * 50)
-        print(result["analysis"])
-        print("=" * 50)
-    
-    # 分析市场
-    print("\n2️⃣ 分析整体市场...")
-    result = analyze_market()
     print("\n" + "=" * 50)
     print(result)
     print("=" * 50)

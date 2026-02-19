@@ -70,7 +70,7 @@ def get_stock_price(code: str) -> Optional[Dict]:
                 'close': d.get('f60', 0),
             }
     except Exception as e:
-        print(f"获取价格失败: {e}")
+        _logger.warning(f"获取价格失败: {e}")
     
     return None
 
@@ -108,7 +108,7 @@ def get_fund_flow(code: str, days: int = 10) -> List[Dict]:
             }]
     
     except Exception as e:
-        print(f"获取资金流向失败: {e}")
+        _logger.warning(f"获取资金流向失败: {e}")
     
     return []
 
@@ -142,7 +142,7 @@ def get_hot_sectors(limit: int = 10) -> List[Dict]:
         return results
     
     except Exception as e:
-        print(f"获取热点板块失败: {e}")
+        _logger.warning(f"获取热点板块失败: {e}")
         return []
 
 
@@ -205,36 +205,42 @@ def get_realtime_news(limit: int = 10) -> List[Dict]:
             return unique[:limit]
             
         except Exception as e:
-            print(f"获取新闻失败: {e}")
+            _logger.warning(f"获取新闻失败: {e}")
             return _get_news_simple()
         finally:
             browser.close()
 
 
 def _get_news_simple() -> List[Dict]:
-    """简单的新闻获取（备用）"""
-    url = "https://finance.sina.com.cn/stock/"
-    headers = {'User-Agent': 'Mozilla/5.0'}
-    
+    """简单的新闻获取（使用东方财富API）"""
     try:
+        import json
+        url = 'https://newsapi.eastmoney.com/kuaixun/v1/getlist_102_ajaxResult_50_1_.html'
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        
         session = _get_session()
         resp = session.get(url, headers=headers, timeout=10)
         
-        pattern = re.compile(r'<a[^>]*href=["\']([^"\']+)["\'][^>]*>([^<]{10,50})</a>')
-        matches = pattern.findall(resp.text)
+        # 解析 JSONP 响应
+        text = resp.text
+        if text.startswith('var ajaxResult='):
+            text = text[len('var ajaxResult='):]
+        
+        data = json.loads(text)
+        lives = data.get('LivesList', [])
         
         results = []
-        for href, title in matches[:10]:
-            if 'stock' in href or 'finance' in href:
-                results.append({
-                    'title': title.strip(),
-                    'source': '新浪财经',
-                    'url': href
-                })
+        for item in lives[:10]:
+            results.append({
+                'title': item.get('title', ''),
+                'source': '东方财富',
+                'url': item.get('url_w', ''),
+                'time': item.get('datetime', '')
+            })
         
         return results
     except Exception as e:
-        print(f"简单新闻获取失败: {e}")
+        _logger.warning(f"简单新闻获取失败: {e}")
         return []
 
 
@@ -249,7 +255,7 @@ def fetch_with_playwright(url: str) -> Optional[str]:
             content = page.content()
             return content
         except Exception as e:
-            print(f"Playwright 访问失败: {e}")
+            _logger.warning(f"Playwright 访问失败: {e}")
             return None
         finally:
             browser.close()
@@ -285,16 +291,16 @@ if __name__ == "__main__":
     
     print("\n1. 股票价格:")
     price = get_stock_price("600519")
-    print(f"   {price}")
+    _logger.warning(f"   {price}")
     
     print("\n2. 资金流向:")
     flow = get_fund_flow("600519", days=5)
     for f in flow[:3]:
-        print(f"   {f}")
+        _logger.warning(f"   {f}")
     
     print("\n3. 热点板块:")
     sectors = get_hot_sectors(5)
     for s in sectors:
-        print(f"   {s}")
+        _logger.warning(f"   {s}")
     
     print("\n=== 完成 ===")

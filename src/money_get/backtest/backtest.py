@@ -1,8 +1,8 @@
 """回测系统 - 时间隔离的数据查询"""
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
-from money_get.db import get_connection
-from money_get.scraper import get_stock_price, get_fund_flow, get_realtime_news
+from money_get.core.db import get_connection
+from money_get.core.scraper import get_stock_price, get_fund_flow, get_realtime_news
 import json
 
 

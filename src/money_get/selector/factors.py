@@ -7,8 +7,8 @@
 4. 市场情绪 - 龙虎榜、热点板块
 """
 from typing import Dict, List, Optional
-from money_get.db import get_connection, get_stock, get_kline
-from money_get.scraper import get_stock_price, get_fund_flow, get_hot_sectors
+from money_get.core.db import get_connection, get_stock, get_kline
+from money_get.core.scraper import get_stock_price, get_fund_flow, get_hot_sectors
 
 
 class FactorScore:

@@ -1,8 +1,8 @@
 """智能选股系统回测 - 验证AI决策准确性"""
 import logging
 from money_get.backtest import TimeMachine, BacktestEngine
-from money_get.db import get_connection
-from money_get.scraper import get_stock_price
+from money_get.core.db import get_connection
+from money_get.core.scraper import get_stock_price
 import json
 
 # 创建日志

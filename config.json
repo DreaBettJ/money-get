@@ -1,37 +1,12 @@
 {
   "llm": {
+    "provider": "minimax",
     "url": "https://api.minimax.chat/v1",
-    "model": "MiniMax-M2.5",
-    "api_key": "sk-cp-G6lp_kvQw1s0C2RIlhI5olEW2_bWVaGS7Bm1OHXJCgepwkkQixMepNEoH0KnmxXi4ox0l1CIjCxzPBrJSHrSwrwnU663Y_cxIMiHkeL06x8gNqD_9zPAOds"
+    "api_key": "sk-cp-G6lp_kvQw1s0C2RIlhI5olEW2_bWVaGS7Bm1OHXJCgepwkkQixMepNEoH0KnmxXi4ox0l1CIjCxzPBrJSHrSwrwnU663Y_cxIMiHkeL06x8gNqD_9zPAOds",
+    "model": "MiniMax-M2.5"
   },
   "langfuse": {
     "public_key": "pk-lf-75fb6a0c-cfd9-40cd-9d54-dd5925294a25",
     "secret_key": "sk-lf-d13eaf41-6a64-417c-9469-3b671b147bfe"
-  },
-  "data": {
-    "stocks": [
-      "600406",
-      "600845",
-      "300750",
-      "300274",
-      "000682",
-      "002339",
-      "300166",
-      "600835"
-    ],
-    "watch_list": []
-  },
-  "push": {
-    "enabled": false,
-    "type": "email",
-    "email": {
-      "smtp": "smtp.qq.com",
-      "port": 587,
-      "from": "2293785363@qq.com",
-      "to": "2293785363@qq.com"
-    }
-  },
-  "tushare": {
-    "token": "15d92bd332af912359b4c208b1d9ebbfed3fc6fd078da80271c2b00a"
   }
 }

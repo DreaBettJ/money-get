@@ -1,7 +1,7 @@
 """自动选股系统 - 每日精选"""
 from money_get.enhanced_factors import batch_analyze, quick_analyze
-from money_get.scraper import get_hot_sectors
-from money_get.db import get_connection
+from money_get.core.scraper import get_hot_sectors
+from money_get.core.db import get_connection
 from datetime import datetime
 
 

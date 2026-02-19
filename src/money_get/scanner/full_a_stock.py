@@ -1,5 +1,5 @@
 """全A股扫描系统 - 5000只"""
-from money_get.scraper import get_stock_price
+from money_get.core.scraper import get_stock_price
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 import logging

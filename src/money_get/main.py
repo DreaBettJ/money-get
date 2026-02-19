@@ -1,13 +1,170 @@
 """股票分析 CLI 入口。"""
 import argparse
+import json
+from datetime import datetime
+from pathlib import Path
 
 from money_get.agent import StockAgent
 from money_get.backtest.strategy import Strategy, quick_backtest
+from money_get.logger import get_logger, log_trade
+
+logger = get_logger("money_get.cli")
+
+
+def load_trades():
+    """加载交易记录"""
+    path = Path(__file__).parent.parent.parent / "data" / "trades.json"
+    if path.exists():
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f).get("trades", [])
+    return []
+
+
+def save_trades(trades):
+    """保存交易记录"""
+    path = Path(__file__).parent.parent.parent / "data" / "trades.json"
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump({"trades": trades}, f, ensure_ascii=False, indent=2)
+
+
+def cmd_buy(args):
+    """买入命令"""
+    trade = {
+        "code": args.code,
+        "action": "买入",
+        "price": args.price,
+        "quantity": args.quantity,
+        "reason": args.reason or "",
+        "date": args.date or datetime.now().strftime("%Y-%m-%d"),
+        "recorded_at": datetime.now().isoformat()
+    }
+    trades = load_trades()
+    trades.append(trade)
+    save_trades(trades)
+    
+    # 记录日志
+    log_trade("买入", args.code, args.price, args.quantity, args.reason or "")
+    logger.info(f"买入: {args.code} x {args.quantity} @ {args.price}")
+    
+    print(f"✅ 已记录买入: {args.code} x {args.quantity} @ {args.price}")
+
+
+def cmd_sell(args):
+    """卖出命令"""
+    trade = {
+        "code": args.code,
+        "action": "卖出",
+        "price": args.price,
+        "quantity": args.quantity,
+        "reason": args.reason or "",
+        "date": args.date or datetime.now().strftime("%Y-%m-%d"),
+        "recorded_at": datetime.now().isoformat()
+    }
+    trades = load_trades()
+    trades.append(trade)
+    save_trades(trades)
+    
+    # 记录日志
+    log_trade("卖出", args.code, args.price, args.quantity, args.reason or "")
+    logger.info(f"卖出: {args.code} x {args.quantity} @ {args.price}")
+    
+    print(f"✅ 已记录卖出: {args.code} x {args.quantity} @ {args.price}")
+
+
+def cmd_portfolio(args):
+    """查看持仓"""
+    trades = load_trades()
+    
+    # 计算持仓
+    holdings = {}
+    for t in trades:
+        code = t.get("code") or t.get("stock_code", "")
+        if not code:
+            continue
+        action = t.get("action") or t.get("direction", "")
+        qty = t.get("quantity", 0)
+        price = t.get("price", 0)
+        
+        if action in ["买入", "buy"]:
+            if code not in holdings:
+                holdings[code] = {"qty": 0, "cost": 0}
+            holdings[code]["qty"] += qty
+            holdings[code]["cost"] += price * qty
+        elif action in ["卖出", "sell"]:
+            if code in holdings:
+                holdings[code]["qty"] -= qty
+                if holdings[code]["qty"] <= 0:
+                    del holdings[code]
+    
+    if not holdings:
+        print("📭 当前无持仓")
+        return
+    
+    print("=" * 50)
+    print("📊 当前持仓")
+    print("=" * 50)
+    total_value = 0
+    total_cost = 0
+    for code, h in holdings.items():
+        qty = h["qty"]
+        cost = h["cost"]
+        avg_cost = cost / qty if qty > 0 else 0
+        print(f"{code}: {qty}股 | 成本: {avg_cost:.2f}元 | 总成本: {cost:.2f}元")
+        total_cost += cost
+    print("-" * 50)
+    print(f"总成本: {total_cost:.2f}元")
+
+
+def cmd_stats(args):
+    """交易统计"""
+    trades = load_trades()
+    if not trades:
+        print("📭 暂无交易记录")
+        return
+    
+    buys = [t for t in trades if t.get("action") in ["买入", "buy"]]
+    sells = [t for t in trades if t.get("action") in ["卖出", "sell"]]
+    
+    print("=" * 50)
+    print("📈 交易统计")
+    print("=" * 50)
+    print(f"总交易次数: {len(trades)}")
+    print(f"买入次数: {len(buys)}")
+    print(f"卖出次数: {len(sells)}")
+    
+    # 简单统计
+    total_buy = sum(t.get("price", 0) * t.get("quantity", 0) for t in buys)
+    total_sell = sum(t.get("price", 0) * t.get("quantity", 0) for t in sells)
+    print(f"\n买入总额: {total_buy:.2f}元")
+    print(f"卖出总额: {total_sell:.2f}元")
+    if total_buy > 0:
+        print(f"持仓成本: {total_buy - total_sell:.2f}元")
+
+
+def cmd_list(args):
+    """列出交易记录"""
+    trades = load_trades()
+    if not trades:
+        print("📭 暂无交易记录")
+        return
+    
+    print("=" * 50)
+    print("📋 交易记录")
+    print("=" * 50)
+    for i, t in enumerate(trades[-10:], 1):
+        code = t.get("code") or t.get("stock_code", "")
+        action = t.get("action") or t.get("direction", "")
+        price = t.get("price", 0)
+        qty = t.get("quantity", 0)
+        date = t.get("date", "")
+        reason = t.get("reason", "")
+        print(f"{i}. {date} | {code} | {action} {qty}股 @{price} | {reason}")
 
 
 def cli() -> None:
+    # 主 parser
     parser = argparse.ArgumentParser(description="股票分析 CLI")
-    parser.add_argument("stock", nargs="?", help="股票代码")
+    parser.add_argument("--stock", "-s", help="股票代码")
     parser.add_argument("--hot", action="store_true", help="查看热点板块")
     parser.add_argument("--backtest", "-b", action="store_true", help="回测模式")
     parser.add_argument("--reco", "-r", action="store_true", help="推荐股票")
@@ -15,7 +172,53 @@ def cli() -> None:
     parser.add_argument("--weeks", "-w", type=int, default=52, help="回测周数")
     parser.add_argument("--verbose", "-v", action="store_true", help="详细输出")
     parser.add_argument("--no-trace", action="store_true", help="不追踪")
+    
+    # 子命令
+    subparsers = parser.add_subparsers(title="子命令", dest="cmd")
+    
+    # buy 子命令
+    buy_parser = subparsers.add_parser("buy", help="记录买入")
+    buy_parser.add_argument("code", help="股票代码")
+    buy_parser.add_argument("price", type=float, help="买入价格")
+    buy_parser.add_argument("quantity", type=int, help="数量")
+    buy_parser.add_argument("--reason", help="买入理由")
+    buy_parser.add_argument("--date", help="日期 YYYY-MM-DD")
+    
+    # sell 子命令
+    sell_parser = subparsers.add_parser("sell", help="记录卖出")
+    sell_parser.add_argument("code", help="股票代码")
+    sell_parser.add_argument("price", type=float, help="卖出价格")
+    sell_parser.add_argument("quantity", type=int, help="数量")
+    sell_parser.add_argument("--reason", help="卖出理由")
+    sell_parser.add_argument("--date", help="日期 YYYY-MM-DD")
+    
+    # portfolio 子命令
+    subparsers.add_parser("portfolio", help="查看持仓")
+    
+    # stats 子命令
+    subparsers.add_parser("stats", help="交易统计")
+    
+    # list 子命令
+    subparsers.add_parser("list", help="列出交易记录")
+    
     args = parser.parse_args()
+    
+    # 处理子命令
+    if args.cmd == "buy":
+        cmd_buy(args)
+        return
+    if args.cmd == "sell":
+        cmd_sell(args)
+        return
+    if args.cmd == "portfolio":
+        cmd_portfolio(args)
+        return
+    if args.cmd == "stats":
+        cmd_stats(args)
+        return
+    if args.cmd == "list":
+        cmd_list(args)
+        return
 
     verbose = args.verbose
     trace = not args.no_trace
@@ -143,10 +346,24 @@ def cli() -> None:
         print("=" * 50)
         print(f"📊 分析: {args.stock}")
         print("=" * 50)
-        agent = StockAgent(backtest_date="2025-01-01", verbose=verbose, trace=trace) if args.backtest else StockAgent(
-            verbose=verbose, trace=trace
-        )
-        print(agent.analyze(args.stock))
+        
+        # 使用多 Agent 协作系统
+        from .agents import TradingAgents
+        from .logger import logger as _logger
+        
+        _logger.info(f"开始多Agent分析: {args.stock}")
+        
+        agents = TradingAgents(mode='hybrid')
+        result = agents.analyze(args.stock)
+        
+        # 打印最终决策
+        decision = result.get('decision', '无决策')
+        print("\n" + "="*50)
+        print("📋 分析结果")
+        print("="*50)
+        print(decision)
+        
+        _logger.info(f"多Agent分析完成: {args.stock}")
         return
 
     print(

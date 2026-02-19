@@ -12,8 +12,8 @@ import json
 import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
-from money_get.scraper import get_stock_price, get_fund_flow, get_hot_sectors
-from money_get.db import get_connection
+from money_get.core.scraper import get_stock_price, get_fund_flow, get_hot_sectors
+from money_get.core.db import get_connection
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -459,7 +459,7 @@ class SmartSelector:
         Returns:
             List: 推荐列表
         """
-        from money_get.scraper import get_stock_price
+        from money_get.core.scraper import get_stock_price
         from concurrent.futures import ThreadPoolExecutor
         
         # 生成候选股票列表

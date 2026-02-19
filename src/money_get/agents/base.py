@@ -11,6 +11,7 @@ from money_get.context import (
     format_context_for_agent,
     get_current_stock
 )
+from ..logger import logger as _logger
 
 # 项目根目录
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -21,7 +22,10 @@ def get_api_config() -> dict:
     config_path = PROJECT_ROOT.parent / "config.json"
     with open(config_path, "r", encoding="utf-8") as f:
         config = json.load(f)
-    return config.get("llm", {})
+    # 合并 llm 和 langfuse 配置
+    llm_cfg = config.get("llm", {})
+    llm_cfg["langfuse"] = config.get("langfuse", {})
+    return llm_cfg
 
 
 class BaseAgent(ABC):
@@ -57,33 +61,80 @@ class BaseAgent(ABC):
     
     def call_llm(self, prompt: str, system_prompt: str = None) -> str:
         """调用LLM"""
+        import uuid
+        
         config = get_api_config()
         
         url = config.get("url", "https://api.minimax.chat/v1") + "/text/chatcompletion_v2"
         api_key = config.get("api_key", "")
         model = config.get("model", "MiniMax-M2.5")
         
+        # 生成 trace_id
+        trace_id = str(uuid.uuid4())
+        
+        # 尝试使用 Langfuse 记录
+        langfuse = None
+        try:
+            from langfuse import Langfuse
+            cfg = config.get("langfuse", {})
+            if cfg.get("public_key") and cfg.get("secret_key"):
+                langfuse = Langfuse(
+                    public_key=cfg["public_key"],
+                    secret_key=cfg["secret_key"]
+                )
+                langfuse.trace_id = trace_id
+        except:
+            pass
+        
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json"
         }
         
+        system_msg = system_prompt or self.get_system_prompt()
+        
         messages = [
-            {"role": "system", "content": system_prompt or self.get_system_prompt()},
+            {"role": "system", "content": system_msg},
             {"role": "user", "content": prompt}
         ]
+        
+        # 详细日志
+        _logger.info(f"🤖 [{self.name}] 调用LLM [Trace: {trace_id[:8]}...]")
+        _logger.info(f"   System: {system_msg[:200]}...")
+        _logger.info(f"   User: {prompt[:300]}...")
         
         data = {
             "model": model,
             "messages": messages,
-            "temperature": 0.1
+            "temperature": 0.3
         }
         
         response = requests.post(url, headers=headers, json=data, timeout=120)
         response.raise_for_status()
         
         result = response.json()
-        return result["choices"][0]["message"]["content"]
+        content = result["choices"][0]["message"]["content"]
+        
+        _logger.info(f"   Result [Trace: {trace_id[:8]}...]: {content[:300]}...")
+        
+        # 记录到 Langfuse
+        if langfuse:
+            try:
+                # 创建 trace
+                trace_id = langfuse.create_trace_id(seed=trace_id)
+                # 使用 span 记录
+                with langfuse.start_as_current_span(
+                    name=self.name,
+                    trace_context={"trace_id": trace_id}
+                ) as span:
+                    span.input = {"messages": messages}
+                    span.output = content[:500]
+                    span.metadata = {"model": model, "temperature": 0.3}
+                _logger.info(f"   📊 Langfuse 已记录 [Trace: {trace_id[:8]}...]")
+            except Exception as e:
+                _logger.warning(f"   ⚠️ Langfuse 记录失败: {e}")
+        
+        return content
     
     def format_output(self, title: str, content: str) -> str:
         """格式化输出"""

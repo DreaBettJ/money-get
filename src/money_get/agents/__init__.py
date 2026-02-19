@@ -17,6 +17,11 @@ from .research_agent import ResearchAgent, research
 from .decision_agent import DecisionAgent, decide
 from .alert_agent import MarketAlertAgent, analyze_market_movement, quick_market_check
 
+# LangGraph Agent
+from .fund_agent_langgraph import FundAgentLangGraph, analyze_fund as analyze_fund_langgraph
+from .news_agent_langgraph import NewsAgentLangGraph, analyze_news as analyze_news_langgraph
+from .sentiment_agent_langgraph import SentimentAgentLangGraph, analyze_sentiment as analyze_sentiment_langgraph
+
 # 协作与工具
 from .cache import clear_cache
 from .collaboration import (
@@ -26,6 +31,8 @@ from .collaboration import (
     hybrid_analyze,
     COLLABORATION_MODES
 )
+# LangGraph
+from .langgraph_agents import LangGraphAgents, langgraph_analyze
 from ..context import ContextScope, get_isolated_context, add_stock_summary
 
 
@@ -77,6 +84,7 @@ market_analysis = analyze_market_movement
 __all__ = [
     # 核心类
     'TradingAgents',
+    'LangGraphAgents',
     'BaseAgent',
     # Agent
     'FundAgent',
@@ -90,6 +98,7 @@ __all__ = [
     'quick_decide',
     'market_check',
     'market_analysis',
+    'langgraph_analyze',
     # 协作
     'MultiAgentOrchestrator',
     'hybrid_analyze',

@@ -10,9 +10,9 @@ class VerboseCallbackHandler(BaseCallbackHandler):
     """打印 prompt 和 response 到终端"""
     
     def on_llm_start(self, serialized, prompts, **kwargs):
-        print("\n" + "="*50)
-        print("📤 PROMPT (LLM Input)")
-        print("="*50)
+        _logger.info("\n" + "="*50)
+        _logger.info("📤 PROMPT (LLM Input)")
+        _logger.info("="*50)
         for i, p in enumerate(prompts):
             print(f"\n--- Message {i+1} ---")
             # 截断太长
@@ -20,15 +20,15 @@ class VerboseCallbackHandler(BaseCallbackHandler):
         print()
     
     def on_llm_end(self, response, **kwargs):
-        print("="*50)
-        print("📥 RESPONSE (LLM Output)")
-        print("="*50)
+        _logger.info("="*50)
+        _logger.info("📥 RESPONSE (LLM Output)")
+        _logger.info("="*50)
         # 打印内容
         if hasattr(response, 'generations') and response.generations:
             for gen in response.generations[0]:
                 content = gen.text if hasattr(gen, 'text') else str(gen)
                 print(content[:2000] if len(content) > 2000 else content)
-        print("\n" + "="*50)
+        _logger.info("\n" + "="*50)
         
         # 打印 token 使用
         if hasattr(response, 'llm_output') and response.llm_output:
@@ -36,7 +36,7 @@ class VerboseCallbackHandler(BaseCallbackHandler):
             print(f"📊 Token: prompt={usage.get('prompt_tokens', 0)}, "
                   f"completion={usage.get('completion_tokens', 0)}, "
                   f"total={usage.get('total_tokens', 0)}")
-            print("="*50 + "\n")
+            _logger.info("="*50 + "\n")
     
     def on_llm_error(self, error, **kwargs):
         print(f"\n❌ LLM Error: {error}\n")

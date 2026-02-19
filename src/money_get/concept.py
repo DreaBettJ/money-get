@@ -306,7 +306,7 @@ def get_concept_list() -> List[Dict]:
         return concepts
     
     except Exception as e:
-        print(f"获取概念板块失败: {e}")
+        _logger.info(f"获取概念板块失败: {e}")
         return []
 
 
@@ -383,7 +383,7 @@ def get_concept_stocks(concept_name: str, limit: int = 30) -> List[Dict]:
         return stocks
     
     except Exception as e:
-        print(f"获取概念成分股失败: {e}")
+        _logger.info(f"获取概念成分股失败: {e}")
         return []
 
 
@@ -404,7 +404,7 @@ def select_by_policy_concepts(policy_keywords: List[str], top_n: int = 30) -> Li
         print("未匹配到概念板块")
         return []
     
-    print(f"匹配到 {len(concepts)} 个概念: {concepts[:5]}...")
+    _logger.info(f"匹配到 {len(concepts)} 个概念: {concepts[:5]}...")
     
     # 2. 获取成分股
     all_stocks = []
@@ -430,15 +430,15 @@ if __name__ == "__main__":
     keywords = ["新能源", "人工智能", "医药"]
     
     concepts = match_concepts(keywords)
-    print(f"关键词: {keywords}")
-    print(f"匹配概念: {len(concepts)} 个")
+    _logger.info(f"关键词: {keywords}")
+    _logger.info(f"匹配概念: {len(concepts)} 个")
     for c in concepts[:10]:
-        print(f"  - {c}")
+        _logger.info(f"  - {c}")
     print()
     
     # 获取第一个概念的成分股
     if concepts:
-        print(f"获取概念成分股: {concepts[0]}")
+        _logger.info(f"获取概念成分股: {concepts[0]}")
         stocks = get_concept_stocks(concepts[0], limit=5)
         for s in stocks:
-            print(f"  {s['code']} {s['name']}")
+            _logger.info(f"  {s['code']} {s['name']}")

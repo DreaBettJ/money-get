@@ -3,6 +3,7 @@ from .base import BaseAgent
 from .cache import get_cache_key, get_cached_result, save_cache, CACHE_CONFIG
 from money_get.db import get_hot_sectors, get_lhb_data
 from datetime import datetime, timedelta
+from ..logger import logger as _logger
 import subprocess
 import json
 
@@ -29,6 +30,8 @@ class SentimentAgent(BaseAgent):
     
     def analyze(self, stock_code: str = None, **kwargs) -> str:
         """分析市场情绪"""
+        _logger.info(f"😀 SentimentAgent 开始分析: {stock_code or '大盘'}")
+        
         # 获取数据
         today = datetime.now().strftime("%Y-%m-%d")
         yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
@@ -36,6 +39,8 @@ class SentimentAgent(BaseAgent):
         sectors_today = get_hot_sectors(date=today, limit=15)
         sectors_yest = get_hot_sectors(date=yesterday, limit=15)
         lhbs = get_lhb_data(limit=30)
+        
+        _logger.info(f"😀 SentimentAgent 数据获取完成: {stock_code or '大盘'}")
         
         # 准备数据
         data = {

@@ -1,6 +1,6 @@
 """批量回测系统"""
 from money_get.backtest import TimeMachine, BacktestEngine
-from money_get.db import get_connection
+from money_get.core.db import get_connection
 from datetime import datetime, timedelta
 import json
 

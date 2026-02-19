@@ -1,6 +1,6 @@
 """全市场扫描系统 - 集成到money-get"""
 import logging
-from money_get.scraper import get_stock_price
+from money_get.core.scraper import get_stock_price
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 from datetime import datetime

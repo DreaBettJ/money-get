@@ -1,7 +1,7 @@
 """增强因子系统 - 包含基本面因子"""
 from typing import Dict, List
-from money_get.db import get_connection, get_stock, get_kline
-from money_get.scraper import get_stock_price, get_fund_flow, get_hot_sectors
+from money_get.core.db import get_connection, get_stock, get_kline
+from money_get.core.scraper import get_stock_price, get_fund_flow, get_hot_sectors
 
 
 class EnhancedFactor:

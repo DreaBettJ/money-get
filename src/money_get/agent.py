@@ -7,9 +7,14 @@
 4. 市场情绪分析
 5. 回测评估
 """
+import logging
 from typing import List, Dict, Optional
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import tool
+
+from .logger import log_analysis, logger as _logger
+
+logger = logging.getLogger(__name__)
 
 
 class StockAgent:
@@ -276,8 +281,8 @@ class StockAgent:
                         url = item.get('url', '')
                         response += f"- {title}\n  {snippet}...\n  来源: {url}\n\n"
                     return response
-            except:
-                pass
+            except Exception as exc:
+                logger.debug("MiniMax MCP search unavailable: %s", exc)
             
             # 备用：直接请求
             try:
@@ -285,8 +290,8 @@ class StockAgent:
                 url = "https://api.minimax.chat/v1/search"
                 # 如果 MCP 不可用，返回提示
                 return "搜索功能需要配置 MCP MiniMax，请先配置 mcporter"
-            except:
-                pass
+            except Exception as exc:
+                logger.debug("MiniMax HTTP fallback unavailable: %s", exc)
             
             return "搜索功能暂时不可用"
         
@@ -425,12 +430,17 @@ class StockAgent:
                 try:
                     # 需要在正确目录运行以找到 MCP 配置
                     result = subprocess.run(
-                        ['mcporter', 'call', 'minimax.web_search', 
-                         '--output', 'json', 'query=A股 今日热点板块 机器人 AI 有色金属'],
+                        [
+                            "mcporter",
+                            "call",
+                            "minimax.web_search",
+                            "--output",
+                            "json",
+                            "query=A股 今日热点板块 机器人 AI 有色金属",
+                        ],
                         capture_output=True,
                         text=True,
-                        timeout=15,
-                        cwd='/home/lijiang/.openclaw/workspace'
+                        timeout=15
                     )
                     output = result.stdout
                     if output and 'error' not in output:
@@ -443,7 +453,8 @@ class StockAgent:
                                 response += f"  • {title}\n"
                     else:
                         response += "搜索暂不可用\n"
-                except:
+                except Exception as exc:
+                    logger.debug("News search unavailable: %s", exc)
                     response += "搜索暂不可用\n"
                 
                 # 6. 综合判断
@@ -486,10 +497,24 @@ class StockAgent:
                 elif sell_count > buy_count:
                     response += "资金观望，谨慎为主\n"
                 
-                return response
-                
-            except Exception as e:
-                return f"分析失败: {e}"
+                # 记录分析日志
+                try:
+                    # 提取推荐结果
+                    recommendation = "观望"
+                    if "买入" in response and "增持" in response:
+                        recommendation = "买入"
+                    elif "卖出" in response:
+                        recommendation = "卖出"
+                    
+                    log_analysis(
+                        code=stock_code,
+                        recommendation=recommendation,
+                        price=current_price or 0,
+                        target=0,
+                        reason=response[:100]
+                    )
+                except Exception as e:
+                    _logger.warning(f"记录分析日志失败: {e}")
                 
                 return response
                 
@@ -601,6 +626,10 @@ class StockAgent:
         """
         from money_get.llm import get_llm
         from money_get.memory import get_principles, get_patterns
+        from .logger import logger as _logger
+        
+        # 记录开始分析
+        _logger.info(f"========== 开始分析股票: {stock_code} ==========")
         
         # 获取原则和规律
         principles = get_principles() or "只买行业龙头，不追高只低吸"
@@ -608,6 +637,8 @@ class StockAgent:
         
         # 构建 system prompt
         mode = f"[回测模式 - 当前日期: {self.backtest_date}]" if self.backtest_date else "[实时模式]"
+        
+        _logger.info(f"分析模式: {mode}")
         
         system_prompt = f"""你是一位专业的A股交易员。
 
@@ -670,18 +701,27 @@ class StockAgent:
         user_q = question or f"请分析股票 {stock_code}，给出买卖建议"
         messages.append(HumanMessage(content=user_q))
         
+        _logger.info(f"构建 prompt 完成，准备调用 LLM...")
+        
         # 获取 LLM
         llm = get_llm(
-            temperature=0.1,
-            thinking=True,
+            temperature=0.3,
+            thinking=False,
             trace=self.trace,
             verbose=self.verbose
         ).bind_tools(self.tools)
         
+        _logger.info(f"调用 LLM 进行分析...")
+        
         # 调用
         response = llm.invoke(messages)
         
-        return response.content if hasattr(response, 'content') else str(response)
+        result = response.content if hasattr(response, 'content') else str(response)
+        
+        # 记录分析完成
+        _logger.info(f"========== 分析完成: {stock_code} ==========")
+        
+        return result
     
     def run_backtest(self, stocks: List[str], weeks: int = 52) -> Dict:
         """运行回测
@@ -704,9 +744,9 @@ class StockAgent:
             date_str = current_date.strftime("%Y-%m-%d")
             
             if self.verbose:
-                print(f"\n{'='*50}")
-                print(f"第 {week + 1} 周: {date_str}")
-                print(f"{'='*50}")
+                _logger.info(f"\n{'='*50}")
+                _logger.info(f"第 {week + 1} 周: {date_str}")
+                _logger.info(f"{'='*50}")
             
             # 分析每只股票
             for stock in stocks:

@@ -1,5 +1,5 @@
 """快速全市场扫描"""
-from money_get.scraper import get_stock_price
+from money_get.core.scraper import get_stock_price
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 

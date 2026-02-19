@@ -1,7 +1,9 @@
 """消息Agent - 分析新闻和政策（含异动监控）"""
 from .base import BaseAgent
 from .cache import get_cache_key, get_cached_result, save_cache, CACHE_CONFIG
-from money_get.db import get_news, get_stock
+from money_get.db import get_stock
+from money_get.scraper import get_realtime_news
+from ..logger import logger as _logger
 
 
 class NewsAgent(BaseAgent):
@@ -27,9 +29,13 @@ class NewsAgent(BaseAgent):
     
     def analyze(self, stock_code: str, **kwargs) -> str:
         """分析新闻"""
+        _logger.info(f"📰 NewsAgent 开始分析: {stock_code}")
+        
         # 获取数据
-        news = get_news(stock_code, limit=20)
+        news = get_realtime_news(limit=20)
         stock = get_stock(stock_code) or {}
+        
+        _logger.info(f"📰 NewsAgent 数据获取完成: {stock_code}, 新闻数: {len(news)}")
         
         # 准备数据
         data = {
@@ -45,16 +51,21 @@ class NewsAgent(BaseAgent):
         # 尝试缓存 (12小时)
         cached = get_cached_result(cache_key, max_age_days=CACHE_CONFIG['news_agent'])
         if cached:
+            _logger.info(f"📰 NewsAgent 使用缓存: {stock_code}")
             return f"[消息Agent - 缓存]\n{cached}"
         
         # 构建提示词
         prompt = self._build_prompt(data)
+        
+        _logger.info(f"📰 NewsAgent 调用LLM: {stock_code}")
         
         # 调用LLM
         result = self.call_llm(prompt)
         
         # 缓存
         save_cache(cache_key, result)
+        
+        _logger.info(f"📰 NewsAgent 分析完成: {stock_code}")
         
         return self.format_output(f"📰 新闻分析 - {stock.get('name', stock_code)}", result)
     

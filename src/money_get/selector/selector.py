@@ -9,6 +9,7 @@
 from typing import List, Dict, Optional
 from .scraper import get_stock_price, get_hot_sectors, get_fund_flow
 from .policy import get_focus_sectors
+from .logger import log_selector, log_fund, logger
 import time
 
 # 请求间隔
@@ -64,7 +65,7 @@ def get_concept_stocks(concept_name: str = None, limit: int = 30) -> List[Dict]:
         return concepts[:limit]
     
     except Exception as e:
-        print(f"获取概念板块失败: {e}")
+        _logger.info(f"获取概念板块失败: {e}")
         return []
 
 
@@ -81,6 +82,9 @@ def check_consecutive_inflow(stock_code: str, days: int = 2) -> Dict:
     _delay()
     
     import requests
+    
+    # 记录资金流请求
+    logger.info(f"资金流查询: {stock_code}")
     
     if stock_code.startswith('6'):
         secid = f"1.{stock_code}"
@@ -121,7 +125,7 @@ def check_consecutive_inflow(stock_code: str, days: int = 2) -> Dict:
             }
     
     except Exception as e:
-        print(f"获取资金流向失败: {stock_code}: {e}")
+        _logger.info(f"获取资金流向失败: {stock_code}: {e}")
     
     return {
         'total_inflow': 0,
@@ -209,7 +213,7 @@ def get_financial_data(stock_code: str) -> Dict:
             }
     
     except Exception as e:
-        print(f"获取财务数据失败: {stock_code}: {e}")
+        _logger.info(f"获取财务数据失败: {stock_code}: {e}")
     
     return {}
 
@@ -232,6 +236,9 @@ def filter_financial(stock_code: str) -> Dict:
     _delay()
     
     import requests
+    
+    # 记录财务查询
+    logger.info(f"财务查询: {stock_code}")
     
     if stock_code.startswith('6'):
         secid = f"1.{stock_code}"
@@ -276,7 +283,7 @@ def filter_financial(stock_code: str) -> Dict:
                 reasons.append(f'涨幅过大({pct:.1f}%)')
     
     except Exception as e:
-        print(f"基础财务获取失败: {stock_code}: {e}")
+        _logger.info(f"基础财务获取失败: {stock_code}: {e}")
     
     # 2. 获取财务指标
     try:
@@ -294,7 +301,7 @@ def filter_financial(stock_code: str) -> Dict:
                 is_qualified = False
     
     except Exception as e:
-        print(f"财务指标获取失败: {stock_code}: {e}")
+        _logger.info(f"财务指标获取失败: {stock_code}: {e}")
     
     return {
         'is_qualified': is_qualified,
@@ -317,6 +324,9 @@ def get_stock_technique(stock_code: str) -> Dict:
     _delay()
     
     import requests
+    
+    # 记录技术分析
+    logger.info(f"技术分析: {stock_code}")
     
     # 先尝试获取基础数据
     if stock_code.startswith('6'):
@@ -370,7 +380,7 @@ def get_stock_technique(stock_code: str) -> Dict:
             }
     
     except Exception as e:
-        print(f"获取技术形态失败: {stock_code}: {e}")
+        _logger.info(f"获取技术形态失败: {stock_code}: {e}")
     
     return {
         'price': 0,
@@ -454,7 +464,7 @@ def get_stock_technique(stock_code: str) -> Dict:
         }
     
     except Exception as e:
-        print(f"获取K线失败: {stock_code}: {e} (type: {type(e).__name__})")
+        _logger.info(f"获取K线失败: {stock_code}: {e} (type: {type(e).__name__})")
     
     return {
         'ma5': 0,
@@ -486,29 +496,35 @@ def select_stocks(
     Returns:
         list: 选股结果
     """
-    print(f"=== 规则过滤选股 ===")
-    print(f"条件: 资金流入", end="")
+    _logger.info(f"=== 规则过滤选股 ===")
+    _logger.info(f"条件: 资金流入", end="")
     if require_pattern:
-        print(" + 技术形态", end="")
+        _logger.info(" + 技术形态", end="")
     if use_policy:
-        print(" + 政策关键词", end="")
+        _logger.info(" + 政策关键词", end="")
     if use_llm:
-        print(" + LLM决策", end="")
-    print()
+        _logger.info(" + LLM决策", end="")
+    _logger.info("")
+    
+    # 记录选股开始
+    log_selector("开始选股", 0, f"条件: 资金+形态+政策")
+    logger.info(f"开始选股，条件: 资金+形态+政策")
     
     # 第0步：获取政策关注领域
     policy_sectors = []
     if use_policy:
-        print("\n0. 获取政策关键词...")
+        _logger.info("\n0. 获取政策关键词...")
         try:
             from .policy import get_focus_sectors
             policy_sectors = get_focus_sectors()
-            print(f"   政策关注领域: {', '.join(policy_sectors)}")
+            _logger.info(f"   政策关注领域: {', '.join(policy_sectors)}")
+            log_selector("政策领域", len(policy_sectors), ",".join(policy_sectors))
         except Exception as e:
-            print(f"   获取政策失败: {e}")
+            _logger.info(f"   获取政策失败: {e}")
+            log_selector("政策领域", 0, f"失败: {e}")
     
     # 第1步：获取热门股票（从热点板块）
-    print("\n1. 获取热门股票...")
+    _logger.info("\n1. 获取热门股票...")
     sectors = get_hot_sectors(limit=20)
     
     # 简化：获取沪深涨幅榜
@@ -531,12 +547,12 @@ def select_stocks(
                     'change': item.get('f2', 0),
                 })
     except Exception as e:
-        print(f"获取涨幅榜失败: {e}")
+        _logger.info(f"获取涨幅榜失败: {e}")
     
-    print(f"   待筛选: {len(stocks_to_check)} 只")
+    _logger.info(f"   待筛选: {len(stocks_to_check)} 只")
     
     # 第2步：检查资金连续流入
-    print("\n2. 检查资金连续流入...")
+    _logger.info("\n2. 检查资金连续流入...")
     qualified = []
     
     for i, stock in enumerate(stocks_to_check[:30]):
@@ -549,20 +565,22 @@ def select_stocks(
             stock['inflow'] = inflow
             qualified.append(stock)
             inflow_amt = inflow.get('total_inflow', 0)
-            print(f"   ✓ {code} {name}: 净流入 {inflow_amt:.1f}万")
+            _logger.info(f"   ✓ {code} {name}: 净流入 {inflow_amt:.1f}万")
         
         if (i + 1) % 10 == 0:
-            print(f"   已检查 {i+1}/30")
+            _logger.info(f"   已检查 {i+1}/30")
     
-    print(f"   资金关: {len(qualified)} 只")
+    _logger.info(f"   资金关: {len(qualified)} 只")
+    log_selector("资金过滤", len(qualified), f"候选: {len(stocks_to_check)}")
     
     if not qualified:
-        print("\n无符合条件股票")
+        _logger.info("\n无符合条件股票")
+        log_selector("资金过滤", 0, "无符合条件")
         return []
     
     # 第3步：检查技术形态
     if require_pattern:
-        print("\n3. 检查技术形态...")
+        _logger.info("\n3. 检查技术形态...")
         
         final = []
         for stock in qualified:
@@ -572,14 +590,16 @@ def select_stocks(
             if tech['has_pattern']:
                 stock['technique'] = tech
                 final.append(stock)
-                print(f"   ✓ {code}: {', '.join(tech['patterns'])}")
+                _logger.info(f"   ✓ {code}: {', '.join(tech['patterns'])}")
         
-        print(f"   技术关: {len(final)} 只")
+        _logger.info(f"   技术关: {len(final)} 只")
+        log_selector("技术形态", len(final), "通过")
     else:
         final = qualified
+        log_selector("技术形态", len(final), "跳过")
     
     # 第4步：财务过滤（排雷）
-    print("\n4. 财务过滤（排雷）...")
+    _logger.info("\n4. 财务过滤（排雷）...")
     
     filtered = []
     for stock in final:
@@ -589,24 +609,45 @@ def select_stocks(
         if finance['is_qualified']:
             stock['finance'] = finance
             filtered.append(stock)
-            print(f"   ✓ {code}: 价格{finance.get('price')} 成交{finance.get('amount')}万 涨幅{finance.get('pct')}%")
+            _logger.info(f"   ✓ {code}: 价格{finance.get('price')} 成交{finance.get('amount')}万 涨幅{finance.get('pct')}%")
         else:
-            print(f"   ✗ {code}: {', '.join(finance['reasons'])}")
+            _logger.info(f"   ✗ {code}: {', '.join(finance['reasons'])}")
     
-    print(f"   财务关: {len(filtered)} 只")
+    _logger.info(f"   财务关: {len(filtered)} 只")
+    log_selector("财务过滤", len(filtered), f"通过")
     
     # 返回结果
     final = filtered[:top_n]
     
-    print(f"\n=== 规则过滤结果: {len(final)} 只 ===")
+    # 记录完整股票池（每只股票的详细信息）
+    pool_details = []
+    for s in final:
+        code = s.get('code', '')
+        name = s.get('name', '')
+        inflow = s.get('inflow', {}).get('total_inflow', 0)
+        inflow_days = s.get('inflow', {}).get('consecutive_days', 0)
+        patterns = s.get('technique', {}).get('patterns', [])
+        pool_details.append(f"{code},{name},流入{inflow:.1f}万,{inflow_days}天,{','.join(patterns)}")
+    
+    # 记录股票池日志
+    log_selector("股票池", len(final), "|".join(pool_details))
+    logger.info(f"=== 股票池: {len(final)} 只 ===")
+    for detail in pool_details:
+        logger.info(f"  {detail}")
+    
+    # 记录简洁结果
+    codes = [f"{s['code']}{s['name']}" for s in final]
+    log_selector("最终结果", len(final), ",".join(codes))
+    
+    _logger.info(f"\n=== 规则过滤结果: {len(final)} 只 ===")
     for i, s in enumerate(final, 1):
         patterns = s.get('technique', {}).get('patterns', [])
         inflow_days = s.get('inflow', {}).get('consecutive_days', 0)
-        print(f"{i}. {s['code']} {s['name']} (流入{inflow_days}天, {patterns})")
+        _logger.info(f"{i}. {s['code']} {s['name']} (流入{inflow_days}天, {patterns})")
     
     # 如果开启LLM决策
     if use_llm and final:
-        print("\n=== LLM最终决策 ===")
+        _logger.info("\n=== LLM最终决策 ===")
         from .agents import TradingAgents
         agents = TradingAgents()
         
@@ -615,7 +656,7 @@ def select_stocks(
             code = stock['code']
             name = stock['name']
             
-            print(f"分析 {code} {name}...")
+            _logger.info(f"分析 {code} {name}...")
             
             try:
                 analysis = agents.analyze(code)
@@ -632,10 +673,10 @@ def select_stocks(
                 stock['analysis'] = analysis
                 llm_final.append(stock)
                 
-                print(f"  → {stock['llm_recommendation']}")
+                _logger.info(f"  → {stock['llm_recommendation']}")
                 
             except Exception as e:
-                print(f"  → 分析失败: {e}")
+                _logger.info(f"  → 分析失败: {e}")
                 stock['llm_recommendation'] = '观望'
                 llm_final.append(stock)
         
@@ -644,9 +685,9 @@ def select_stocks(
         # 筛选推荐的
         recommended = [s for s in final if s.get('llm_recommendation') == '买入']
         
-        print(f"\n=== LLM推荐: {len(recommended)} 只 ===")
+        _logger.info(f"\n=== LLM推荐: {len(recommended)} 只 ===")
         for s in recommended:
-            print(f"  {s['code']} {s['name']}")
+            _logger.info(f"  {s['code']} {s['name']}")
     
     return final
 
@@ -663,7 +704,7 @@ def analyze_selected_stocks(stocks: List[Dict], top_n: int = 3) -> List[Dict]:
     """
     from .agents import TradingAgents
     
-    print(f"\n=== Agent深度分析 (前{top_n}只) ===\n")
+    _logger.info(f"\n=== Agent深度分析 (前{top_n}只) ===\n")
     
     agents = TradingAgents()
     
@@ -672,7 +713,7 @@ def analyze_selected_stocks(stocks: List[Dict], top_n: int = 3) -> List[Dict]:
         code = stock['code']
         name = stock['name']
         
-        print(f"{i}. 分析 {code} {name}...")
+        _logger.info(f"{i}. 分析 {code} {name}...")
         
         try:
             # 调用Agent分析
@@ -698,10 +739,10 @@ def analyze_selected_stocks(stocks: List[Dict], top_n: int = 3) -> List[Dict]:
                 'analysis': analysis
             })
             
-            print(f"   → {recommendation}")
+            _logger.info(f"   → {recommendation}")
             
         except Exception as e:
-            print(f"   → 分析失败: {e}")
+            _logger.info(f"   → 分析失败: {e}")
     
     return results
 
@@ -713,9 +754,9 @@ def select_and_analyze() -> List[Dict]:
         list: 选股结果 + Agent分析
     """
     # 1. 选股
-    print("=" * 50)
-    print("第1步：量化筛选")
-    print("=" * 50)
+    _logger.info("=" * 50)
+    _logger.info("第1步：量化筛选")
+    _logger.info("=" * 50)
     
     stocks = select_stocks(
         min_consecutive_days=1,
@@ -724,7 +765,7 @@ def select_and_analyze() -> List[Dict]:
     )
     
     if not stocks:
-        print("无符合条件股票")
+        _logger.info("无符合条件股票")
         return []
     
     # 2. Agent深度分析
@@ -735,7 +776,7 @@ def select_and_analyze() -> List[Dict]:
 
 # 测试
 if __name__ == "__main__":
-    print("=== 综合选股测试 ===\n")
+    _logger.info("=== 综合选股测试 ===\n")
     
     # 选股：连续2天资金流入 + 技术形态
     results = select_stocks(

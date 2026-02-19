@@ -10,6 +10,7 @@ import concurrent.futures
 from typing import Dict, Any, List, Callable
 from functools import partial
 import time
+from ..logger import logger as _logger
 
 
 class AgentTask:
@@ -72,7 +73,8 @@ class AgentTeam:
     
     def execute_parallel(self, max_workers: int = 4) -> Dict[str, Any]:
         """并行执行所有任务"""
-        print(f"🚀 {self.name}: 启动 {len(self.tasks)} 个Agent并行执行")
+        task_names = [t.name for t in self.tasks]
+        _logger.info(f"📈 并行: {task_names}")
         
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {executor.submit(task.execute): task for task in self.tasks}
@@ -80,24 +82,24 @@ class AgentTeam:
             for future in concurrent.futures.as_completed(futures):
                 task = futures[future]
                 if task.error:
-                    print(f"  ❌ {task.name} 失败: {task.error}")
+                    _logger.warning(f"  ❌ {task.name}: {task.error}")
                 else:
-                    print(f"  ✅ {task.name} 完成 ({task.duration:.1f}s)")
+                    _logger.info(f"  ✅ {task.name} ({task.duration:.1f}s)")
                     self.results[task.name] = task.result
         
         return self.results
     
     def execute_sequential(self) -> Dict[str, Any]:
         """串行执行（保留以备兼容）"""
-        print(f"🔄 {self.name}: 串行执行 {len(self.tasks)} 个任务")
+        _logger.info(f"🔄 {self.name}: 串行执行 {len(self.tasks)} 个任务")
         
         for task in self.tasks:
-            print(f"  ▶️  执行 {task.name}...")
+            _logger.info(f"  ▶️  执行 {task.name}...")
             task.execute()
             if task.error:
-                print(f"  ❌ {task.name} 失败: {task.error}")
+                _logger.info(f"  ❌ {task.name} 失败: {task.error}")
             else:
-                print(f"  ✅ {task.name} 完成 ({task.duration:.1f}s)")
+                _logger.info(f"  ✅ {task.name} 完成 ({task.duration:.1f}s)")
                 self.results[task.name] = task.result
         
         return self.results
@@ -119,7 +121,7 @@ class AgentTeam:
         if not dependency_map:
             return self.execute_parallel()
         
-        print(f"🔗 {self.name}: 按依赖执行 {len(self.tasks)} 个任务")
+        _logger.info(f"🔗 {self.name}: 按依赖执行 {len(self.tasks)} 个任务")
         
         completed = set()
         pending = {task.name for task in self.tasks}
@@ -138,15 +140,15 @@ class AgentTeam:
             
             # 执行就绪的任务
             for task in ready:
-                print(f"  ▶️  执行 {task.name} (依赖: {dependency_map.get(task.name, [])})")
+                _logger.info(f"  ▶️  执行 {task.name} (依赖: {dependency_map.get(task.name, [])})")
                 task.execute()
                 pending.remove(task.name)
                 
                 if task.error:
-                    print(f"  ❌ {task.name} 失败: {task.error}")
+                    _logger.info(f"  ❌ {task.name} 失败: {task.error}")
                     self.results[task.name] = None
                 else:
-                    print(f"  ✅ {task.name} 完成 ({task.duration:.1f}s)")
+                    _logger.info(f"  ✅ {task.name} 完成 ({task.duration:.1f}s)")
                     self.results[task.name] = task.result
                     # 共享给其他任务
                     self.share_context(task.name, task.result)
@@ -204,10 +206,9 @@ class MultiAgentOrchestrator:
         Returns:
             dict: 汇总结果
         """
-        print(f"\n{'='*50}")
-        print(f"📊 多Agent协作分析 - {stock_code}")
-        print(f"模式: {self.mode}")
-        print(f"{'='*50}")
+        _logger.info(f"\n{'='*60}")
+        _logger.info(f"🚀 开始分析股票: {stock_code} | 模式: {self.mode}")
+        _logger.info(f"{'='*60}")
         
         start = time.time()
         
@@ -223,7 +224,9 @@ class MultiAgentOrchestrator:
             result = self._analyze_hybrid(stock_code, agents)
         
         elapsed = time.time() - start
-        print(f"\n⏱️ 总耗时: {elapsed:.1f}s")
+        _logger.info(f"\n{'='*60}")
+        _logger.info(f"✅ 分析完成: {stock_code} | 耗时: {elapsed:.1f}s")
+        _logger.info(f"{'='*60}")
         
         return result
     
@@ -286,7 +289,7 @@ class MultiAgentOrchestrator:
     
     def _analyze_hybrid(self, stock_code: str, agents: dict) -> dict:
         """混合模式：先并行分析，再串行决策"""
-        print("\n📈 阶段1: 并行分析")
+        _logger.info("\n--- 📈 阶段1: 并行分析 ---")
         
         team = AgentTeam("混合分析-并行阶段")
         team.add_task("fund", agents["fund"], "analyze", (stock_code,))
@@ -299,7 +302,7 @@ class MultiAgentOrchestrator:
         news = parallel_results.get("news", "")
         sentiment = parallel_results.get("sentiment", "")
         
-        print("\n📝 阶段2: 串行决策")
+        _logger.info("\n--- 📝 阶段2: 串行决策 ---")
         
         # 研究辩论
         research = agents["research"].analyze(stock_code,

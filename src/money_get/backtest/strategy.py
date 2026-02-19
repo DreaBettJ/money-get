@@ -339,7 +339,7 @@ def quick_backtest(
     Returns:
         评估结果
     """
-    from money_get.db import get_kline
+    from money_get.core.db import get_kline
     
     if strategy is None:
         strategy = Strategy()
@@ -402,7 +402,7 @@ def quick_backtest(
     
     # 写入数据库
     try:
-        from money_get.db import insert_trade
+        from money_get.core.db import insert_trade
         for t in engine.trades:
             insert_trade(
                 stock_code=t.get("stock", ""),

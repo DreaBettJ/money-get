@@ -1,7 +1,7 @@
 """完整选股系统 - 扫描 + 多因子分析"""
 from money_get.full_scan import full_scan, STOCK_POOL
 from money_get.enhanced_factors import EnhancedFactor
-from money_get.scraper import get_stock_price
+from money_get.core.scraper import get_stock_price
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 
