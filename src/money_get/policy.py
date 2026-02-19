@@ -11,13 +11,9 @@ from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 from enum import Enum
 
-# 创建logger
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-if not logger.handlers:
-    handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-    logger.addHandler(handler)
+# 使用统一的日志配置
+from money_get.core.logger import get_logger
+logger = get_logger("money_get.policy")
 
 # Playwright 是可选依赖
 try:
