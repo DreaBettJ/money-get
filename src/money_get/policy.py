@@ -21,6 +21,8 @@ try:
     HAS_PLAYWRIGHT = True
 except ImportError:
     HAS_PLAYWRIGHT = False
+    logger.warning("⚠️ Playwright 未安装，将使用备用数据源，政策信息可能不完整")
+    logger.info("💡 安装 Playwright: pip install playwright && playwright install chromium")
 
 # 请求间隔（秒）
 REQUEST_DELAY = 2.0
@@ -279,12 +281,9 @@ def _dedup_keywords(keywords: List[Dict]) -> List[Dict]:
 
 
 def _get_policy_fallback() -> List[Dict]:
-    """备用方案：无Playwright时使用预设关键词"""
-    return [
-        {'title': '新能源汽车产业发展规划', 'source': '预设', 'sectors': ['新能源'], 'level': '国家级', 'timeliness': '新政策'},
-        {'title': '人工智能创新发展行动计划', 'source': '预设', 'sectors': ['人工智能'], 'level': '部委级', 'timeliness': '新政策'},
-        {'title': '半导体产业扶持政策', 'source': '预设', 'sectors': ['半导体'], 'level': '国家级', 'timeliness': '近期'},
-    ]
+    """备用方案：无数据时返回空"""
+    logger.warning("⚠️ 无可用政策数据源，请安装 Playwright 获取真实数据")
+    return []
 
 
 def get_focus_sectors(policy_level: str = None, timeliness: str = None) -> List[str]:
